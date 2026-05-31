@@ -36,6 +36,17 @@ export default async function Footer() {
           <p>
             © {year} {s.schoolName}. All rights reserved.
           </p>
+          <p>
+            Powered by{" "}
+            <a
+              href="https://datahex.co/"
+              target="_blank"
+              rel="noreferrer"
+              className="font-medium text-white/70 transition hover:text-white"
+            >
+              Datahex
+            </a>
+          </p>
           <div className="flex items-center gap-4">
             {s.facebook && (
               <a href={s.facebook} target="_blank" rel="noreferrer" className="hover:text-white/80">
