@@ -10,7 +10,10 @@ import {
 } from "@/lib/data";
 
 export const metadata: Metadata = {
-  title: "Zenithia Global School — Excellence, Leadership & Success",
+  title: {
+    absolute: "Zenithia Global School — Excellence, Leadership & Success",
+  },
+  alternates: { canonical: "/" },
 };
 
 function formatDate(d: Date | null) {

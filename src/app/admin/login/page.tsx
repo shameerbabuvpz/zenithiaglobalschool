@@ -4,7 +4,10 @@ import Image from "next/image";
 import { getSession } from "@/lib/auth";
 import { loginAction } from "@/lib/actions";
 
-export const metadata: Metadata = { title: "Admin Login" };
+export const metadata: Metadata = {
+  title: "Admin Login",
+  robots: { index: false, follow: false },
+};
 export const dynamic = "force-dynamic";
 
 export default async function LoginPage({

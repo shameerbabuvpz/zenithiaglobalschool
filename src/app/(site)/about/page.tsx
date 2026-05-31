@@ -4,7 +4,19 @@ import PageHero from "@/components/PageHero";
 import SafeImage from "@/components/SafeImage";
 import { getSiteSettings } from "@/lib/data";
 
-export const metadata: Metadata = { title: "About Us" };
+export const metadata: Metadata = {
+  title: "About Us",
+  description:
+    "Discover Zenithia Global School — our story, vision, mission and core values. A future-ready school nurturing knowledge, discipline and confidence in every learner.",
+  alternates: { canonical: "/about" },
+  openGraph: {
+    title: "About Zenithia Global School",
+    description:
+      "Our story, vision, mission and the values that shape confident, capable global learners.",
+    url: "/about",
+    type: "website",
+  },
+};
 
 const values = [
   { icon: "📘", title: "Knowledge", text: "A rigorous, future-ready curriculum that builds strong foundations." },

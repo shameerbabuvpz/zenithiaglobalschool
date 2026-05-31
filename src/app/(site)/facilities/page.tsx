@@ -4,7 +4,19 @@ import PageHero from "@/components/PageHero";
 import SafeImage from "@/components/SafeImage";
 import { getFacilities } from "@/lib/data";
 
-export const metadata: Metadata = { title: "Facilities" };
+export const metadata: Metadata = {
+  title: "Facilities",
+  description:
+    "Explore the modern, safe and well-equipped facilities at Zenithia Global School — inspiring spaces designed for learning, play and holistic growth.",
+  alternates: { canonical: "/facilities" },
+  openGraph: {
+    title: "Facilities at Zenithia Global School",
+    description:
+      "Safe, well-equipped and inspiring spaces that help every student learn, play and grow.",
+    url: "/facilities",
+    type: "website",
+  },
+};
 
 export default async function FacilitiesPage() {
   const facilities = await getFacilities();

@@ -3,7 +3,19 @@ import PageHero from "@/components/PageHero";
 import SafeImage from "@/components/SafeImage";
 import { getPrograms } from "@/lib/data";
 
-export const metadata: Metadata = { title: "Upcoming Programs" };
+export const metadata: Metadata = {
+  title: "Upcoming Programs",
+  description:
+    "Stay updated with upcoming programs and events at Zenithia Global School — academic, cultural and co-curricular activities throughout the year.",
+  alternates: { canonical: "/programs" },
+  openGraph: {
+    title: "Programs & Events — Zenithia Global School",
+    description:
+      "Upcoming academic, cultural and co-curricular programs and events at Zenithia.",
+    url: "/programs",
+    type: "website",
+  },
+};
 
 function formatDate(d: Date | null) {
   if (!d) return null;

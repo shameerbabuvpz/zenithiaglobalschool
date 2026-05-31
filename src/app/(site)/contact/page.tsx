@@ -3,7 +3,19 @@ import PageHero from "@/components/PageHero";
 import ContactForm from "@/components/ContactForm";
 import { getSiteSettings } from "@/lib/data";
 
-export const metadata: Metadata = { title: "Contact Us" };
+export const metadata: Metadata = {
+  title: "Contact Us",
+  description:
+    "Get in touch with Zenithia Global School for admissions, campus visits and enquiries. Find our address, phone, email and WhatsApp details.",
+  alternates: { canonical: "/contact" },
+  openGraph: {
+    title: "Contact Zenithia Global School",
+    description:
+      "Reach out for admissions, campus visits or any enquiry. We would love to hear from you.",
+    url: "/contact",
+    type: "website",
+  },
+};
 
 export default async function ContactPage() {
   const s = await getSiteSettings();
