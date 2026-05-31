@@ -1,0 +1,115 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Single admin user for the minimal CMS panel.
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String   @default("Administrator")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// Singleton row that holds all editable site-wide content
+// (contact details, about text, vision, mission, hero, socials...).
+model SiteSetting {
+  id        Int      @id @default(1)
+  schoolName String  @default("Zenithia Global School")
+  tagline    String  @default("Excellence. Leadership. Success.")
+
+  // Hero
+  heroTitle    String @default("Zenithia leads you toward excellence, leadership, and success.")
+  heroSubtitle String @default("A future-ready global school nurturing knowledge, discipline and confidence.")
+  heroImageUrl String?
+
+  // About / Vision / Mission
+  aboutTitle String @default("About Zenithia Global School")
+  aboutBody  String @default("") @db.Text
+  visionBody String @default("") @db.Text
+  missionBody String @default("") @db.Text
+
+  // Contact
+  address   String @default("")
+  phone     String @default("")
+  email     String @default("")
+  whatsapp  String @default("")
+  mapEmbed  String @default("") @db.Text
+
+  // Socials
+  facebook  String @default("")
+  instagram String @default("")
+  youtube   String @default("")
+  twitter   String @default("")
+
+  // Stats shown on home (editable)
+  statStudents String @default("1200+")
+  statTeachers String @default("80+")
+  statYears    String @default("15+")
+  statAwards   String @default("40+")
+
+  updatedAt DateTime @updatedAt
+}
+
+model Facility {
+  id          String   @id @default(cuid())
+  title       String
+  description String   @db.Text
+  imageUrl    String?
+  icon        String?  // optional emoji / icon name
+  order       Int      @default(0)
+  published   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Feature {
+  id          String   @id @default(cuid())
+  title       String
+  description String   @db.Text
+  icon        String?
+  order       Int      @default(0)
+  published   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model GalleryImage {
+  id        String   @id @default(cuid())
+  title     String   @default("")
+  category  String   @default("Campus")
+  imageUrl  String
+  order     Int      @default(0)
+  published Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Program {
+  id          String    @id @default(cuid())
+  title       String
+  description String    @db.Text
+  date        DateTime?
+  location    String    @default("")
+  imageUrl    String?
+  published   Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String   @default("")
+  subject   String   @default("")
+  message   String   @db.Text
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
