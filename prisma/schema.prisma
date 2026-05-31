@@ -49,10 +49,10 @@ model SiteSetting {
   twitter   String @default("")
 
   // Stats shown on home (editable)
-  statStudents String @default("1200+")
-  statTeachers String @default("80+")
-  statYears    String @default("15+")
-  statAwards   String @default("40+")
+  statStudents String @default("100+")
+  statTeachers String @default("10+")
+  statYears    String @default("7+")
+  statAwards   String @default("2+")
 
   updatedAt DateTime @updatedAt
 }

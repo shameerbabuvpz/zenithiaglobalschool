@@ -38,10 +38,10 @@ async function main() {
       address: "",
       phone: "",
       email: "",
-      statStudents: "1200+",
-      statTeachers: "80+",
-      statYears: "15+",
-      statAwards: "40+",
+      statStudents: "100+",
+      statTeachers: "10+",
+      statYears: "7+",
+      statAwards: "2+",
     },
   });
   console.log("✔ Site settings ready");
