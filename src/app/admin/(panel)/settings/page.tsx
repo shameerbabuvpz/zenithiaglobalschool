@@ -1,5 +1,9 @@
 import { getSiteSettings } from "@/lib/data";
-import { updateSettingsAction } from "@/lib/actions";
+import {
+  updateSettingsAction,
+  changePinAction,
+  resetPinAction,
+} from "@/lib/actions";
 import ImageField from "@/components/admin/ImageField";
 
 export const dynamic = "force-dynamic";
@@ -43,9 +47,17 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 export default async function SettingsPage({
   searchParams,
 }: {
-  searchParams: { saved?: string };
+  searchParams: { saved?: string; pin?: string };
 }) {
   const s = await getSiteSettings();
+
+  const pinMessage: Record<string, { ok: boolean; text: string }> = {
+    changed: { ok: true, text: "✅ Login PIN updated successfully." },
+    reset: { ok: true, text: "✅ Login PIN reset to the default (345678)." },
+    invalid: { ok: false, text: "PIN must be exactly 6 digits." },
+    mismatch: { ok: false, text: "The two PINs do not match." },
+  };
+  const pinNote = searchParams.pin ? pinMessage[searchParams.pin] : undefined;
 
   return (
     <div className="max-w-3xl">
@@ -125,6 +137,78 @@ export default async function SettingsPage({
           </button>
         </div>
       </form>
+
+      <section className="mt-8 rounded-2xl border border-black/5 bg-white p-6 shadow-sm">
+        <h2 className="font-display text-lg font-bold text-ink">
+          Admin login PIN
+        </h2>
+        <p className="mt-1 text-sm text-ink/60">
+          A 6-digit PIN is used to sign in to this admin panel. You can change it
+          below, or reset it to the default PIN{" "}
+          <span className="font-semibold">345678</span>.
+        </p>
+
+        {pinNote && (
+          <p
+            className={`mt-4 rounded-lg px-4 py-2.5 text-sm ${
+              pinNote.ok
+                ? "bg-green-50 text-green-700"
+                : "bg-red-50 text-red-600"
+            }`}
+          >
+            {pinNote.text}
+          </p>
+        )}
+
+        <form action={changePinAction} className="mt-4 space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="label" htmlFor="newPin">New 6-digit PIN</label>
+              <input
+                id="newPin"
+                name="newPin"
+                type="password"
+                inputMode="numeric"
+                autoComplete="off"
+                pattern="\d{6}"
+                minLength={6}
+                maxLength={6}
+                required
+                placeholder="••••••"
+                className="input tracking-[0.3em]"
+              />
+            </div>
+            <div>
+              <label className="label" htmlFor="confirmPin">Confirm new PIN</label>
+              <input
+                id="confirmPin"
+                name="confirmPin"
+                type="password"
+                inputMode="numeric"
+                autoComplete="off"
+                pattern="\d{6}"
+                minLength={6}
+                maxLength={6}
+                required
+                placeholder="••••••"
+                className="input tracking-[0.3em]"
+              />
+            </div>
+          </div>
+          <button type="submit" className="btn-primary">
+            Update PIN
+          </button>
+        </form>
+
+        <form action={resetPinAction} className="mt-4 border-t border-black/5 pt-4">
+          <button
+            type="submit"
+            className="text-sm font-semibold text-brand-700 hover:underline"
+          >
+            Reset PIN to default (345678)
+          </button>
+        </form>
+      </section>
     </div>
   );
 }

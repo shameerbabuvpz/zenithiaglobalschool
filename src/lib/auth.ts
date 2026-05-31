@@ -7,6 +7,14 @@ import { prisma } from "./prisma";
 const COOKIE_NAME = "zgs_session";
 const MAX_AGE = 60 * 60 * 24 * 7; // 7 days
 
+/** Default 6-digit PIN applied on first run and on reset. */
+export const DEFAULT_PIN = "345678";
+
+/** A valid PIN is exactly 6 digits. */
+export function isValidPin(pin: string) {
+  return /^\d{6}$/.test(pin);
+}
+
 function getSecret() {
   const secret = process.env.AUTH_SECRET;
   if (!secret) {
@@ -29,6 +37,41 @@ export async function verifyCredentials(email: string, password: string) {
   const ok = await bcrypt.compare(password, user.passwordHash);
   if (!ok) return null;
   return user;
+}
+
+/** The single admin account that owns the panel. */
+export async function getAdminUser() {
+  return prisma.adminUser.findFirst({ orderBy: { createdAt: "asc" } });
+}
+
+/** Verify a 6-digit PIN against the admin account. */
+export async function verifyPin(pin: string) {
+  if (!isValidPin(pin)) return null;
+  const user = await getAdminUser();
+  if (!user) return null;
+  const ok = await bcrypt.compare(pin, user.passwordHash);
+  if (!ok) return null;
+  return user;
+}
+
+/** Set (or reset) the admin login PIN, creating the admin if missing. */
+export async function setAdminPin(pin: string) {
+  const passwordHash = await bcrypt.hash(pin, 10);
+  const user = await getAdminUser();
+  if (user) {
+    await prisma.adminUser.update({
+      where: { id: user.id },
+      data: { passwordHash },
+    });
+  } else {
+    await prisma.adminUser.create({
+      data: {
+        email: (process.env.ADMIN_EMAIL || "admin@zenithia.net").toLowerCase(),
+        passwordHash,
+        name: "Administrator",
+      },
+    });
+  }
 }
 
 export async function createSession(payload: SessionPayload) {

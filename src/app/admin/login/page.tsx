@@ -30,18 +30,27 @@ export default async function LoginPage({
 
         {searchParams.error && (
           <p className="mt-5 rounded-lg bg-red-50 px-4 py-2.5 text-center text-sm text-red-600">
-            Invalid email or password.
+            Incorrect PIN. Please try again.
           </p>
         )}
 
         <form action={loginAction} className="mt-6 space-y-4">
           <div>
-            <label className="label" htmlFor="email">Email</label>
-            <input id="email" name="email" type="email" required className="input" autoComplete="username" />
-          </div>
-          <div>
-            <label className="label" htmlFor="password">Password</label>
-            <input id="password" name="password" type="password" required className="input" autoComplete="current-password" />
+            <label className="label" htmlFor="pin">6-digit PIN</label>
+            <input
+              id="pin"
+              name="pin"
+              type="password"
+              inputMode="numeric"
+              autoComplete="off"
+              pattern="\d{6}"
+              minLength={6}
+              maxLength={6}
+              required
+              autoFocus
+              placeholder="••••••"
+              className="input text-center text-2xl tracking-[0.6em]"
+            />
           </div>
           <button type="submit" className="btn-primary w-full">
             Sign in

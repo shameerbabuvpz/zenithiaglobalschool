@@ -4,7 +4,10 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "./prisma";
 import {
-  verifyCredentials,
+  verifyPin,
+  setAdminPin,
+  isValidPin,
+  DEFAULT_PIN,
   createSession,
   destroySession,
   getSession,
@@ -58,9 +61,8 @@ function revalidateAll() {
 /* ----------------------------- Auth ----------------------------- */
 
 export async function loginAction(formData: FormData) {
-  const email = str(formData, "email");
-  const password = str(formData, "password");
-  const user = await verifyCredentials(email, password);
+  const pin = str(formData, "pin");
+  const user = await verifyPin(pin);
   if (!user) {
     redirect("/admin/login?error=1");
   }
@@ -71,6 +73,28 @@ export async function loginAction(formData: FormData) {
 export async function logoutAction() {
   await destroySession();
   redirect("/admin/login");
+}
+
+/** Change the admin login PIN to a new 6-digit value. */
+export async function changePinAction(formData: FormData) {
+  await assertAuthed();
+  const pin = str(formData, "newPin");
+  const confirm = str(formData, "confirmPin");
+  if (!isValidPin(pin)) {
+    redirect("/admin/settings?pin=invalid");
+  }
+  if (pin !== confirm) {
+    redirect("/admin/settings?pin=mismatch");
+  }
+  await setAdminPin(pin);
+  redirect("/admin/settings?pin=changed");
+}
+
+/** Reset the admin login PIN back to the default (345678). */
+export async function resetPinAction() {
+  await assertAuthed();
+  await setAdminPin(DEFAULT_PIN);
+  redirect("/admin/settings?pin=reset");
 }
 
 /* --------------------------- Settings --------------------------- */

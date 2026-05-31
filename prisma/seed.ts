@@ -5,16 +5,16 @@ const prisma = new PrismaClient();
 
 async function main() {
   const email = (process.env.ADMIN_EMAIL || "admin@zenithia.net").toLowerCase();
-  const password = process.env.ADMIN_PASSWORD || "Admin@12345";
-  const passwordHash = await bcrypt.hash(password, 10);
+  const pin = process.env.ADMIN_PIN || "345678";
+  const passwordHash = await bcrypt.hash(pin, 10);
 
-  // 1. Admin user
+  // 1. Admin user (login is by 6-digit PIN)
   await prisma.adminUser.upsert({
     where: { email },
     update: { passwordHash },
     create: { email, passwordHash, name: "Administrator" },
   });
-  console.log(`✔ Admin user ready: ${email}`);
+  console.log(`✔ Admin user ready: ${email} (PIN login)`);
 
   // 2. Site settings
   await prisma.siteSetting.upsert({
@@ -92,7 +92,7 @@ async function main() {
   }
 
   console.log("\n🎉 Seed complete.");
-  console.log(`   Admin login: ${email} / ${password}`);
+  console.log(`   Admin login PIN: ${pin}`);
 }
 
 main()
