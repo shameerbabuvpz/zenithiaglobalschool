@@ -19,11 +19,35 @@ const MAX_BYTES = 8 * 1024 * 1024; // 8MB
 export type SavedFile = { url: string; fileName: string };
 
 /**
+ * Minimal shape of an uploaded file. We intentionally avoid relying on the
+ * global `File` constructor because it is only available as a Node.js global
+ * from Node 20+. On older runtimes `instanceof File` throws
+ * `ReferenceError: File is not defined`, so we duck-type instead.
+ */
+export type UploadedFile = {
+  type: string;
+  size: number;
+  name?: string;
+  arrayBuffer: () => Promise<ArrayBuffer>;
+};
+
+/** Runtime-safe check for a file-like upload from FormData (no `File` global). */
+export function isUploadedFile(value: unknown): value is UploadedFile {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    typeof (value as UploadedFile).arrayBuffer === "function" &&
+    typeof (value as UploadedFile).size === "number" &&
+    typeof (value as UploadedFile).type === "string"
+  );
+}
+
+/**
  * Persist an uploaded image to the configured upload directory and return a
  * public URL. On Railway, UPLOAD_DIR should point to a mounted Volume so the
  * files survive deploys.
  */
-export async function saveUploadedImage(file: File): Promise<SavedFile> {
+export async function saveUploadedImage(file: UploadedFile): Promise<SavedFile> {
   if (!ALLOWED.has(file.type)) {
     throw new Error("Unsupported file type. Use JPG, PNG, WEBP, GIF or AVIF.");
   }

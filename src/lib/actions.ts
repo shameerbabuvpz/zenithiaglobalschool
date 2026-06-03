@@ -12,7 +12,7 @@ import {
   destroySession,
   getSession,
 } from "./auth";
-import { saveUploadedImage, deleteUploadedImage } from "./upload";
+import { saveUploadedImage, deleteUploadedImage, isUploadedFile } from "./upload";
 import { SETTINGS_ID } from "./data";
 
 async function assertAuthed() {
@@ -46,7 +46,7 @@ async function resolveImage(
   const file = formData.get(fileKey);
   const current = str(formData, currentKey) || null;
 
-  if (file instanceof File && file.size > 0) {
+  if (isUploadedFile(file) && file.size > 0) {
     const saved = await saveUploadedImage(file);
     if (current) await deleteUploadedImage(current);
     return saved.url;

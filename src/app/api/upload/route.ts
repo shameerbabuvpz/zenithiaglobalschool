@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import { saveUploadedImage } from "@/lib/upload";
+import { saveUploadedImage, isUploadedFile } from "@/lib/upload";
 
 export async function POST(req: Request) {
   const session = await getSession();
@@ -11,7 +11,7 @@ export async function POST(req: Request) {
   try {
     const formData = await req.formData();
     const file = formData.get("file");
-    if (!(file instanceof File)) {
+    if (!isUploadedFile(file)) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
     const saved = await saveUploadedImage(file);
