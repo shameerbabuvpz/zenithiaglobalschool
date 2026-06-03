@@ -23,6 +23,11 @@ function getSecret() {
   return new TextEncoder().encode(secret);
 }
 
+/** True when the signing secret is configured. */
+export function hasAuthSecret() {
+  return Boolean(process.env.AUTH_SECRET);
+}
+
 export type SessionPayload = {
   uid: string;
   email: string;
@@ -95,6 +100,7 @@ export async function destroySession() {
 }
 
 export async function getSession(): Promise<SessionPayload | null> {
+  if (!hasAuthSecret()) return null;
   const token = cookies().get(COOKIE_NAME)?.value;
   if (!token) return null;
   try {

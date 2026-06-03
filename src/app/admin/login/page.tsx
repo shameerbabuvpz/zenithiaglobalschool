@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import Image from "next/image";
-import { getSession } from "@/lib/auth";
+import { getSession, hasAuthSecret } from "@/lib/auth";
 import { loginAction } from "@/lib/actions";
 
 export const metadata: Metadata = {
@@ -15,8 +15,15 @@ export default async function LoginPage({
 }: {
   searchParams: { error?: string };
 }) {
-  const session = await getSession();
+  let session = null;
+  try {
+    session = await getSession();
+  } catch {
+    session = null;
+  }
   if (session) redirect("/admin");
+
+  const configured = hasAuthSecret();
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-brand-900 p-4">
@@ -30,6 +37,14 @@ export default async function LoginPage({
             Sign in to manage your website
           </p>
         </div>
+
+        {!configured && (
+          <p className="mt-5 rounded-lg bg-amber-50 px-4 py-2.5 text-center text-sm text-amber-700">
+            Server not configured: the <code>AUTH_SECRET</code> environment
+            variable is missing. Please set it in the deployment settings to
+            enable login.
+          </p>
+        )}
 
         {searchParams.error && (
           <p className="mt-5 rounded-lg bg-red-50 px-4 py-2.5 text-center text-sm text-red-600">
@@ -53,9 +68,10 @@ export default async function LoginPage({
               autoFocus
               placeholder="••••••"
               className="input text-center text-2xl tracking-[0.6em]"
+              disabled={!configured}
             />
           </div>
-          <button type="submit" className="btn-primary w-full">
+          <button type="submit" className="btn-primary w-full" disabled={!configured}>
             Sign in
           </button>
         </form>
