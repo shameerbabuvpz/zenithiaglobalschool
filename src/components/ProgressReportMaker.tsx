@@ -75,6 +75,10 @@ const DEFAULT_SUBJECTS = [
   "Social Science",
   "General Knowledge",
   "Computer Science",
+  "EBS",
+  "Lisani",
+  "Thilawath",
+  "Hifd",
 ];
 
 /* ------------------------------ Data types ----------------------------- */
