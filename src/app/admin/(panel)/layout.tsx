@@ -19,7 +19,7 @@ export default async function PanelLayout({
     <div className="min-h-screen bg-gray-50">
       <div className="mx-auto flex max-w-7xl flex-col lg:flex-row">
         {/* Sidebar */}
-        <aside className="shrink-0 border-b border-black/5 bg-white lg:min-h-screen lg:w-64 lg:border-b-0 lg:border-r">
+        <aside className="shrink-0 border-b border-black/5 bg-white lg:sticky lg:top-0 lg:h-screen lg:w-64 lg:self-start lg:overflow-y-auto lg:border-b-0 lg:border-r">
           <div className="flex items-center justify-between p-5">
             <Link href="/admin" className="flex items-center gap-2">
               <Image src="/brand/logo-mark.png" alt="Zenithia" width={32} height={36} />
@@ -35,7 +35,7 @@ export default async function PanelLayout({
 
         {/* Main */}
         <div className="flex-1">
-          <header className="flex items-center justify-between border-b border-black/5 bg-white px-6 py-4">
+          <header className="sticky top-0 z-10 flex items-center justify-between border-b border-black/5 bg-white px-6 py-4">
             <div className="text-sm text-ink/60">
               Signed in as <span className="font-medium text-ink">{session.email}</span>
             </div>
