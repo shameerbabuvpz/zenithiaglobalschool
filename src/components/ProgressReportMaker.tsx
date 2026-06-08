@@ -662,6 +662,28 @@ export default function ProgressReportMaker() {
     XLSX.writeFile(wb, "zenithia-report-template.xlsx");
   }, [subjectNames]);
 
+  const downloadSample = useCallback(() => {
+    const headers = ["Name", "Class", "Roll No", ...subjectNames];
+    const cycle = GRADE_VALUES; // A+, A, B+, B, C+, C, D+, D
+    const sampleStudents = [
+      { name: "Aaron Thomas", klass: "5 A", roll: "12" },
+      { name: "Fathima Rishana", klass: "5 A", roll: "13" },
+      { name: "Mohammed Sinan", klass: "5 A", roll: "14" },
+      { name: "Diya Krishna", klass: "5 A", roll: "15" },
+    ];
+    const rows = sampleStudents.map((s, si) => [
+      s.name,
+      s.klass,
+      s.roll,
+      // Vary the grades per student so the example looks realistic.
+      ...subjectNames.map((_, k) => cycle[(si + k) % cycle.length]),
+    ]);
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Students");
+    XLSX.writeFile(wb, "zenithia-report-sample.xlsx");
+  }, [subjectNames]);
+
   const onExcel = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     e.target.value = "";
@@ -1049,6 +1071,13 @@ export default function ProgressReportMaker() {
               className="rounded-full border border-brand/40 px-3 py-1.5 text-xs font-medium text-brand transition hover:bg-brand/5"
             >
               Download Excel template
+            </button>
+            <button
+              type="button"
+              onClick={downloadSample}
+              className="rounded-full border border-brand/40 px-3 py-1.5 text-xs font-medium text-brand transition hover:bg-brand/5"
+            >
+              Download sample (filled)
             </button>
             <label className="cursor-pointer rounded-full bg-brand px-3 py-1.5 text-xs font-medium text-white transition hover:bg-brand-700">
               Upload Excel (.xlsx)
