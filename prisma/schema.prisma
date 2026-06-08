@@ -129,3 +129,12 @@ model ReportStaff {
   @@index([role])
 }
 
+// Singleton defaults for the Progress Report tool (default subject list and
+// default academic year), so the same starting values load every time.
+model ReportSettings {
+  id           Int      @id @default(1)
+  subjects     String[]
+  academicYear String   @default("2026-27")
+  updatedAt    DateTime @updatedAt
+}
+

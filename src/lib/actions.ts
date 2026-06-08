@@ -376,6 +376,46 @@ export async function deleteReportStaffAction(
   }
 }
 
+/* ----------------------- Report defaults (settings) ---------------------- */
+
+export type ReportSettingsDTO = { subjects: string[]; academicYear: string };
+
+const DEFAULT_ACADEMIC_YEAR = "2026-27";
+
+/** Read the saved Progress Report defaults (subject list + academic year). */
+export async function getReportSettingsAction(): Promise<ReportSettingsDTO> {
+  const session = await getSession();
+  if (!session) return { subjects: [], academicYear: DEFAULT_ACADEMIC_YEAR };
+  const s = await prisma.reportSettings.findUnique({ where: { id: 1 } });
+  return {
+    subjects: s?.subjects ?? [],
+    academicYear: s?.academicYear || DEFAULT_ACADEMIC_YEAR,
+  };
+}
+
+/** Save the Progress Report defaults (default subject list + academic year). */
+export async function saveReportSettingsAction(
+  subjects: string[],
+  academicYear: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const session = await getSession();
+  if (!session) return { ok: false, error: "Unauthorized" };
+  const cleanSubjects = subjects.map((s) => s.trim()).filter(Boolean);
+  const year = academicYear.trim() || DEFAULT_ACADEMIC_YEAR;
+  try {
+    await prisma.reportSettings.upsert({
+      where: { id: 1 },
+      create: { id: 1, subjects: cleanSubjects, academicYear: year },
+      update: { subjects: cleanSubjects, academicYear: year },
+    });
+    revalidateAll();
+    return { ok: true };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Could not save settings";
+    return { ok: false, error: msg };
+  }
+}
+
 /* --------------------------- Programs --------------------------- */
 
 export async function saveProgramAction(formData: FormData) {
