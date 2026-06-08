@@ -51,16 +51,28 @@ function normalizeAward(raw: string): AwardId {
 
 /* ------------------------------ Designs -------------------------------- */
 
-type DesignId = 1 | 2;
+type DesignId = 1 | 2 | 3 | 4 | 5 | 6;
 
 const DESIGNS: { id: DesignId; name: string; hint: string }[] = [
-  { id: 1, name: "Royal Maroon", hint: "White, maroon & gold frame" },
-  { id: 2, name: "Elegant Gold", hint: "Cream, ornate gold border" },
+  { id: 1, name: "Royal Maroon", hint: "Classic maroon & gold — all purpose" },
+  { id: 2, name: "Elegant Gold", hint: "Ornate cream double frame — formal" },
+  { id: 3, name: "Islamic Heritage", hint: "Girih pattern & arch — Arts" },
+  { id: 4, name: "Sports Champion", hint: "Laurel & medal banner — Sports" },
+  { id: 5, name: "Festive Celebration", hint: "Bunting & confetti — Day events" },
+  { id: 6, name: "Modern Minimal", hint: "Clean side band — Quiz & academic" },
 ];
 
-const CERT_BG: Record<DesignId, string> = { 1: "#FFFFFF", 2: "#F4EEE3" };
+const CERT_BG: Record<DesignId, string> = {
+  1: "#FFFFFF",
+  2: "#F4EEE3",
+  3: "#F6F1E7",
+  4: "#FFFFFF",
+  5: "#FBF7EF",
+  6: "#FFFFFF",
+};
 
 const LOGO = "/brand/logo-full.png";
+const WHITE_LOGO = "/brand/logo-full-white.png";
 const SEAL = "/brand/logo-mark.png";
 
 const CATEGORY_SUGGESTIONS = [
@@ -119,38 +131,138 @@ function citationFor(d: CertData): string {
 
 /* ------------------------------ Card view ------------------------------ */
 
+// Curved laurel branch (Sports design). Drawn entirely inline so it embeds
+// cleanly in the exported PNG (no external resources / url(#id) filters).
+function Laurel({ flip }: { flip?: boolean }) {
+  const leaves = Array.from({ length: 7 });
+  return (
+    <svg
+      className="laurel"
+      viewBox="0 0 70 96"
+      aria-hidden
+      style={flip ? { transform: "scaleX(-1)" } : undefined}
+    >
+      <path d="M52,90 C24,74 18,44 30,8" fill="none" stroke="#C6A875" strokeWidth="2.4" strokeLinecap="round" />
+      {leaves.map((_, i) => {
+        const t = i / (leaves.length - 1);
+        const cx = 52 - t * 24 - Math.sin(t * 3) * 4;
+        const cy = 90 - t * 80;
+        const rot = -52 + t * 22;
+        return (
+          <g key={i}>
+            <ellipse cx={cx - 7} cy={cy} rx="9" ry="4" transform={`rotate(${rot - 18} ${cx - 7} ${cy})`} fill="#C6A875" />
+            <ellipse cx={cx + 6} cy={cy} rx="9" ry="4" transform={`rotate(${rot + 18} ${cx + 6} ${cy})`} fill="#b3935a" />
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+// Triangular bunting flags across the top (Festive design).
+function Bunting() {
+  const n = 13;
+  const w = 1056 / n;
+  return (
+    <svg className="bunting" viewBox="0 0 1056 56" preserveAspectRatio="none" aria-hidden>
+      <path d="M0,7 Q528,22 1056,7" fill="none" stroke="#C6A875" strokeWidth="2.5" />
+      {Array.from({ length: n }).map((_, i) => {
+        const x = i * w;
+        const dip = 7 + Math.sin((i / (n - 1)) * Math.PI) * 8;
+        const col = i % 2 ? "#C6A875" : "#6E1E3C";
+        return <polygon key={i} points={`${x + 5},${dip} ${x + w - 5},${dip} ${x + w / 2},${dip + 36}`} fill={col} opacity="0.92" />;
+      })}
+    </svg>
+  );
+}
+
+// Pointed mihrab-style arch behind the title (Islamic Heritage design).
+function Arch() {
+  return (
+    <svg className="arch" viewBox="0 0 360 230" aria-hidden>
+      <path
+        d="M40,228 L40,96 C40,44 120,30 180,12 C240,30 320,44 320,96 L320,228"
+        fill="none"
+        stroke="#C6A875"
+        strokeWidth="2"
+      />
+      <path
+        d="M52,228 L52,98 C52,52 122,40 180,24 C238,40 308,52 308,98 L308,228"
+        fill="none"
+        stroke="rgba(110,30,60,0.35)"
+        strokeWidth="1"
+      />
+    </svg>
+  );
+}
+
+// Eight-pointed star medallion (Islamic Heritage corners).
+function StarMark() {
+  return (
+    <svg className="starmark" viewBox="0 0 44 44" aria-hidden>
+      <g fill="none" stroke="#C6A875" strokeWidth="1.3">
+        <rect x="9" y="9" width="26" height="26" />
+        <rect x="9" y="9" width="26" height="26" transform="rotate(45 22 22)" />
+        <circle cx="22" cy="22" r="4.5" stroke="#6E1E3C" />
+      </g>
+    </svg>
+  );
+}
+
 function CertificateCard({ data }: { data: CertData }) {
   const a = awardInfo(data.award);
   const citation = citationFor(data);
   const subtitle = subtitleFor(data);
   const showPhoto = data.includePhoto && !!data.photo;
+  const d = data.design;
 
   const metaParts: string[] = [];
   if (data.klass.trim()) metaParts.push(`Class ${data.klass.trim()}`);
   if (data.date.trim()) metaParts.push(data.date.trim());
 
   return (
-    <div className={`zcert zc${data.design}`}>
+    <div className={`zcert zc${d}`}>
+      <div className="bgpattern" />
       <div className="frameA" />
       <div className="frameB" />
+
       <span className="corner tl" />
       <span className="corner tr" />
       <span className="corner bl" />
       <span className="corner br" />
 
+      {d === 3 && (
+        <>
+          <Arch />
+          <span className="starmark-pos tl"><StarMark /></span>
+          <span className="starmark-pos tr"><StarMark /></span>
+          <span className="starmark-pos bl"><StarMark /></span>
+          <span className="starmark-pos br"><StarMark /></span>
+        </>
+      )}
+      {d === 4 && <div className="sportband" />}
+      {d === 5 && <Bunting />}
+      {d === 6 && (
+        <div className="sideband">
+          <span className="sbword">CERTIFICATE</span>
+        </div>
+      )}
+
       <div className="cbody">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className="clogo" src={LOGO} alt="Zenithia Global School" />
+        <img className="clogo" src={d === 4 ? WHITE_LOGO : LOGO} alt="Zenithia Global School" />
 
         <div className="ctitle">CERTIFICATE</div>
         <div className="csub">{subtitle}</div>
 
         <div className="cdivider">
+          {d === 4 && <Laurel />}
           <span className="dline" />
           <span className="dmedal" style={{ background: a.color }}>
             {a.badge}
           </span>
           <span className="dline" />
+          {d === 4 && <Laurel flip />}
         </div>
 
         <div className="cpresent">This certificate is proudly presented to</div>
@@ -791,6 +903,76 @@ const CERT_CSS = `
 .zc2 .frameA { position: absolute; inset: 26px; border: 2px solid #C6A875; border-radius: 4px; }
 .zc2 .frameB { position: absolute; inset: 35px; border: 4px double #6E1E3C; border-radius: 2px; }
 
+/* ---- Design 3: Islamic Heritage (Arts) ---- */
+.zc3 { background: #F6F1E7; }
+.zc3 .frameA { position: absolute; inset: 24px; border: 12px solid #6E1E3C; border-radius: 4px; }
+.zc3 .frameB { position: absolute; inset: 40px; border: 1.5px solid #C6A875; border-radius: 2px; box-shadow: inset 0 0 0 6px rgba(198,168,117,0.18); }
+.zc3 .bgpattern {
+  position: absolute; inset: 48px; z-index: 1; opacity: 0.13;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'%3E%3Cg fill='none' stroke='%236E1E3C' stroke-width='1.4'%3E%3Crect x='15' y='15' width='26' height='26'/%3E%3Crect x='15' y='15' width='26' height='26' transform='rotate(45 28 28)'/%3E%3Ccircle cx='28' cy='28' r='4'/%3E%3C/g%3E%3C/svg%3E");
+  background-repeat: repeat;
+}
+.zc3 .arch { position: absolute; top: 96px; left: 50%; transform: translateX(-50%); width: 440px; height: 290px; z-index: 1; }
+.zc3 .starmark-pos { position: absolute; width: 42px; height: 42px; z-index: 4; }
+.zc3 .starmark-pos.tl { top: 60px; left: 60px; }
+.zc3 .starmark-pos.tr { top: 60px; right: 60px; }
+.zc3 .starmark-pos.bl { bottom: 60px; left: 60px; }
+.zc3 .starmark-pos.br { bottom: 60px; right: 60px; }
+.zc3 .corner { display: none; }
+
+/* ---- Design 4: Sports Champion ---- */
+.zc4 { background: #ffffff; }
+.zc4 .frameA { position: absolute; inset: 24px; border: 2.5px solid #6E1E3C; border-radius: 6px; }
+.zc4 .frameB { position: absolute; inset: 33px; border: 1px solid #C6A875; border-radius: 4px; }
+.zc4 .sportband {
+  position: absolute; top: 33px; left: 33px; right: 33px; height: 150px; z-index: 1;
+  background:
+    radial-gradient(120% 150% at 50% -40%, rgba(198,168,117,0.35) 0%, rgba(198,168,117,0) 60%),
+    linear-gradient(180deg, #6E1E3C 0%, #5a1831 100%);
+  border-radius: 4px 4px 60% 60% / 4px 4px 38px 38px;
+}
+.zc4 .corner.tl, .zc4 .corner.tr { display: none; }
+
+/* ---- Design 5: Festive Celebration (Day events) ---- */
+.zc5 { background: #FBF7EF; }
+.zc5 .frameA { position: absolute; inset: 26px; border: 2px solid #C6A875; border-radius: 10px; }
+.zc5 .frameB { position: absolute; inset: 35px; border: 1px dashed rgba(110,30,60,0.5); border-radius: 8px; }
+.zc5 .bunting { position: absolute; top: 40px; left: 40px; right: 40px; height: 54px; z-index: 4; }
+.zc5 .bgpattern {
+  position: absolute; inset: 36px; z-index: 1; opacity: 0.5;
+  background-image:
+    radial-gradient(circle, #C6A875 2px, transparent 2.5px),
+    radial-gradient(circle, rgba(110,30,60,0.5) 2px, transparent 2.5px);
+  background-size: 46px 46px, 46px 46px;
+  background-position: 0 0, 23px 23px;
+  -webkit-mask-image: radial-gradient(circle at 50% 46%, transparent 58%, #000 80%);
+  mask-image: radial-gradient(circle at 50% 46%, transparent 58%, #000 80%);
+}
+.zc5 .corner { width: 40px; height: 40px; }
+
+/* ---- Design 6: Modern Minimal (Quiz / academic) ---- */
+.zc6 { background: #ffffff; }
+.zc6 .frameA { position: absolute; top: 28px; right: 28px; bottom: 28px; left: 150px; border: 1.5px solid rgba(110,30,60,0.18); border-radius: 4px; }
+.zc6 .frameB { display: none; }
+.zc6 .sideband {
+  position: absolute; top: 0; bottom: 0; left: 0; width: 118px; z-index: 2;
+  background: linear-gradient(180deg, #6E1E3C 0%, #5a1831 100%);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: inset -6px 0 0 #C6A875;
+}
+.zc6 .sbword {
+  writing-mode: vertical-rl; transform: rotate(180deg);
+  font-family: var(--font-cinzel), serif; font-weight: 700;
+  letter-spacing: 14px; font-size: 30px; color: rgba(255,255,255,0.92);
+  text-indent: 14px;
+}
+.zc6 .corner { display: none; }
+
+/* Decorative layers (shared) */
+.bgpattern { display: none; }
+.laurel { height: 92px; width: auto; }
+.zcert .arch, .zcert .bunting, .zcert .starmark, .zcert .sportband, .zcert .sideband { pointer-events: none; }
+
 .corner {
   position: absolute;
   width: 44px;
@@ -909,4 +1091,42 @@ const CERT_CSS = `
   flex-shrink: 0;
 }
 .seal img { width: 60px; height: 60px; object-fit: contain; }
+
+/* -------- Per-design body & decoration tweaks -------- */
+
+/* Design 3: Islamic Heritage */
+.zc3 .ctitle { letter-spacing: 12px; }
+.zc3 .dmedal { box-shadow: 0 2px 7px rgba(0,0,0,0.22), inset 0 0 0 3px rgba(255,255,255,0.45); }
+.zc3 .cname { color: #6E1E3C; }
+
+/* Design 4: Sports Champion — header sits on the maroon banner */
+.zc4 .sportband { height: 206px; }
+.zc4 .clogo { height: 64px; }
+.zc4 .ctitle { color: #ffffff; letter-spacing: 12px; }
+.zc4 .csub { color: #E6CF9C; }
+.zc4 .cdivider { gap: 6px; margin-top: 22px; }
+.zc4 .dline { display: none; }
+.zc4 .laurel { height: 88px; }
+.zc4 .dmedal {
+  width: 64px; height: 64px; font-size: 17px;
+  box-shadow: 0 3px 9px rgba(0,0,0,0.28), inset 0 0 0 4px rgba(255,255,255,0.4);
+}
+.zc4 .cname { color: #5a1831; }
+
+/* Design 5: Festive Celebration */
+.zc5 .cbody { top: 112px; }
+.zc5 .ctitle { color: #6E1E3C; }
+.zc5 .cname { color: #b3935a; }
+.zc5 .dmedal { box-shadow: 0 2px 7px rgba(0,0,0,0.2), inset 0 0 0 3px rgba(255,255,255,0.4); }
+
+/* Design 6: Modern Minimal — clear the left band */
+.zc6 .cbody { left: 176px; right: 60px; align-items: flex-start; text-align: left; }
+.zc6 .clogo { margin-bottom: 8px; }
+.zc6 .ctitle { font-size: 46px; letter-spacing: 7px; }
+.zc6 .cdivider { margin-left: 0; }
+.zc6 .cdivider .dline:first-child { display: none; }
+.zc6 .cnameline { margin-left: 0; }
+.zc6 .cfooter { justify-content: flex-start; gap: 60px; }
+.zc6 .sig:first-child { text-align: left; }
+.zc6 .seal { margin-left: auto; }
 `;
