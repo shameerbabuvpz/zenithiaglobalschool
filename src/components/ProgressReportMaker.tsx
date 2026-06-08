@@ -8,34 +8,43 @@ import * as XLSX from "xlsx";
 /**
  * Progress Report card maker (admin only).
  *
- * Enter a mark for each subject and the card shows the GRADE + remark
- * (the raw mark is never printed). Only the subjects that actually have a
- * mark appear on the card. Pick the exam (Monthly / First–Third Term /
- * Annual), add the student's details and an optional photo, then download a
- * high-res PNG. A class-teacher signature is rendered in a handwriting font.
+ * Pick a grade (A+ … D) for each subject and the card shows the grade +
+ * an automatic remark. Only the subjects that have a grade appear on the
+ * card. Pick the exam (Monthly / First–Third Term / Annual), add the
+ * student's details and an optional photo, then download a high-res PNG.
+ * A class-teacher signature is rendered in a handwriting font.
  *
- * Bulk mode: upload an Excel sheet (Name, Class, Roll + one column per
- * subject) and a card is generated and downloaded for every student.
+ * Bulk mode: upload an Excel sheet (Name, Class, Roll + one grade column
+ * per subject) and a card is generated and downloaded for every student.
  */
 
 /* ------------------------------- Grades -------------------------------- */
 
 type Grade = { grade: string; remark: string; tier: number };
 
-const GRADE_SCALE: { min: number; grade: string; remark: string; tier: number }[] = [
-  { min: 91, grade: "A+", remark: "Outstanding", tier: 5 },
-  { min: 81, grade: "A", remark: "Excellent", tier: 5 },
-  { min: 71, grade: "B+", remark: "Very Good", tier: 4 },
-  { min: 61, grade: "B", remark: "Good", tier: 4 },
-  { min: 51, grade: "C+", remark: "Above Average", tier: 3 },
-  { min: 41, grade: "C", remark: "Average", tier: 3 },
-  { min: 33, grade: "D", remark: "Needs Improvement", tier: 2 },
-  { min: 0, grade: "E", remark: "Needs Improvement", tier: 1 },
+// Grades are entered directly (no marks). Each grade carries a remark, a
+// colour tier and a point used to average the overall grade.
+const GRADE_LIST: { grade: string; remark: string; tier: number; point: number }[] = [
+  { grade: "A+", remark: "Outstanding", tier: 5, point: 8 },
+  { grade: "A", remark: "Excellent", tier: 5, point: 7 },
+  { grade: "B+", remark: "Very Good", tier: 4, point: 6 },
+  { grade: "B", remark: "Good", tier: 4, point: 5 },
+  { grade: "C+", remark: "Above Average", tier: 3, point: 4 },
+  { grade: "C", remark: "Average", tier: 3, point: 3 },
+  { grade: "D+", remark: "Satisfactory", tier: 2, point: 2 },
+  { grade: "D", remark: "Needs Improvement", tier: 2, point: 1 },
 ];
 
-function gradeFor(pct: number): Grade {
-  const g = GRADE_SCALE.find((x) => pct >= x.min) ?? GRADE_SCALE[GRADE_SCALE.length - 1];
-  return { grade: g.grade, remark: g.remark, tier: g.tier };
+const GRADE_VALUES = GRADE_LIST.map((g) => g.grade);
+
+function normalizeGrade(raw: string): string {
+  const s = raw.trim().toUpperCase().replace(/\s+/g, "");
+  return GRADE_VALUES.includes(s) ? s : "";
+}
+
+function gradeInfo(grade: string): Grade | null {
+  const g = GRADE_LIST.find((x) => x.grade === grade);
+  return g ? { grade: g.grade, remark: g.remark, tier: g.tier } : null;
 }
 
 /* ------------------------------- Exams --------------------------------- */
@@ -92,13 +101,12 @@ const CLASS_OPTIONS = [
 
 /* ------------------------------ Data types ----------------------------- */
 
-type Subject = { name: string; mark: string };
+type Subject = { name: string; grade: string };
 
 type ReportData = {
   design: DesignId;
   exam: ExamId;
   year: string;
-  maxMark: number;
   studentName: string;
   klass: string;
   roll: string;
@@ -113,31 +121,31 @@ type ReportData = {
 
 type GradedRow = { name: string; grade: string; remark: string; tier: number };
 
-function gradedRows(subjects: Subject[], maxMark: number): GradedRow[] {
+function gradedRows(subjects: Subject[]): GradedRow[] {
   const rows: GradedRow[] = [];
   for (const s of subjects) {
-    const raw = s.mark.trim();
-    if (!s.name.trim() || raw === "") continue;
-    const n = Number(raw);
-    if (Number.isNaN(n)) continue;
-    const pct = maxMark > 0 ? (n / maxMark) * 100 : 0;
-    const g = gradeFor(pct);
+    const g = gradeInfo(normalizeGrade(s.grade));
+    if (!s.name.trim() || !g) continue;
     rows.push({ name: s.name.trim(), grade: g.grade, remark: g.remark, tier: g.tier });
   }
   return rows;
 }
 
-function overallGrade(subjects: Subject[], maxMark: number): Grade | null {
-  const marks: number[] = [];
+function overallGrade(subjects: Subject[]): Grade | null {
+  const points: number[] = [];
   for (const s of subjects) {
-    const raw = s.mark.trim();
-    if (!s.name.trim() || raw === "") continue;
-    const n = Number(raw);
-    if (!Number.isNaN(n)) marks.push(n);
+    if (!s.name.trim()) continue;
+    const entry = GRADE_LIST.find((x) => x.grade === normalizeGrade(s.grade));
+    if (entry) points.push(entry.point);
   }
-  if (!marks.length || maxMark <= 0) return null;
-  const avg = marks.reduce((a, b) => a + b, 0) / marks.length;
-  return gradeFor((avg / maxMark) * 100);
+  if (!points.length) return null;
+  const avg = points.reduce((a, b) => a + b, 0) / points.length;
+  const rounded = Math.round(avg);
+  const best = GRADE_LIST.reduce(
+    (b, x) => (Math.abs(x.point - rounded) < Math.abs(b.point - rounded) ? x : b),
+    GRADE_LIST[0],
+  );
+  return { grade: best.grade, remark: best.remark, tier: best.tier };
 }
 
 /* ------------------------------ Card view ------------------------------ */
@@ -148,8 +156,8 @@ function ExamLabel({ exam }: { exam: ExamId }) {
 }
 
 function ReportCard({ data }: { data: ReportData }) {
-  const rows = gradedRows(data.subjects, data.maxMark);
-  const overall = overallGrade(data.subjects, data.maxMark);
+  const rows = gradedRows(data.subjects);
+  const overall = overallGrade(data.subjects);
   const logo = data.design === 1 ? WHITE_LOGO : DARK_LOGO;
 
   return (
@@ -406,13 +414,12 @@ function fileToDataUrl(file: File): Promise<string> {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-type BulkStudent = { name: string; klass: string; roll: string; marks: Record<string, string> };
+type BulkStudent = { name: string; klass: string; roll: string; grades: Record<string, string> };
 
 export default function ProgressReportMaker() {
   const [design, setDesign] = useState<DesignId>(1);
   const [exam, setExam] = useState<ExamId>("term1");
   const [year, setYear] = useState("2025-26");
-  const [maxMark, setMaxMark] = useState(100);
 
   const [studentName, setStudentName] = useState("");
   const [klass, setKlass] = useState("");
@@ -420,7 +427,7 @@ export default function ProgressReportMaker() {
   const [photo, setPhoto] = useState<string | null>(null);
 
   const [subjects, setSubjects] = useState<Subject[]>(
-    DEFAULT_SUBJECTS.map((name) => ({ name, mark: "" })),
+    DEFAULT_SUBJECTS.map((name) => ({ name, grade: "" })),
   );
 
   const [teacher, setTeacher] = useState("");
@@ -475,7 +482,6 @@ export default function ProgressReportMaker() {
       design,
       exam,
       year,
-      maxMark,
       studentName,
       klass,
       roll,
@@ -487,15 +493,15 @@ export default function ProgressReportMaker() {
       principalSig,
       date,
     }),
-    [design, exam, year, maxMark, studentName, klass, roll, photo, subjects, teacher, teacherSig, principal, principalSig, date],
+    [design, exam, year, studentName, klass, roll, photo, subjects, teacher, teacherSig, principal, principalSig, date],
   );
 
   /* subject helpers */
   const setSubjectName = (i: number, name: string) =>
     setSubjects((prev) => prev.map((s, k) => (k === i ? { ...s, name } : s)));
-  const setSubjectMark = (i: number, mark: string) =>
-    setSubjects((prev) => prev.map((s, k) => (k === i ? { ...s, mark } : s)));
-  const addSubject = () => setSubjects((prev) => [...prev, { name: "", mark: "" }]);
+  const setSubjectGrade = (i: number, grade: string) =>
+    setSubjects((prev) => prev.map((s, k) => (k === i ? { ...s, grade } : s)));
+  const addSubject = () => setSubjects((prev) => [...prev, { name: "", grade: "" }]);
   const removeSubject = (i: number) => setSubjects((prev) => prev.filter((_, k) => k !== i));
 
   /* uploads */
@@ -631,7 +637,7 @@ export default function ProgressReportMaker() {
 
   const downloadTemplate = useCallback(() => {
     const headers = ["Name", "Class", "Roll No", ...subjectNames];
-    const sample = ["Aaron Thomas", "5 A", "12", ...subjectNames.map(() => 85)];
+    const sample = ["Aaron Thomas", "5 A", "12", ...subjectNames.map(() => "A+")];
     const ws = XLSX.utils.aoa_to_sheet([headers, sample]);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Students");
@@ -662,13 +668,13 @@ export default function ProgressReportMaker() {
 
       const students: BulkStudent[] = rows
         .map((r) => {
-          const marks: Record<string, string> = {};
-          for (const sk of subjectKeys) marks[sk.trim()] = String(r[sk] ?? "").trim();
+          const grades: Record<string, string> = {};
+          for (const sk of subjectKeys) grades[sk.trim()] = normalizeGrade(String(r[sk] ?? ""));
           return {
             name: nameKey ? String(r[nameKey] ?? "").trim() : "",
             klass: classKey ? String(r[classKey] ?? "").trim() : "",
             roll: rollKey ? String(r[rollKey] ?? "").trim() : "",
-            marks,
+            grades,
           };
         })
         .filter((s) => s.name);
@@ -678,7 +684,7 @@ export default function ProgressReportMaker() {
         return;
       }
       // Adopt the subject columns from the sheet so cards match the upload.
-      setSubjects(subjectKeys.map((k) => ({ name: k.trim(), mark: "" })));
+      setSubjects(subjectKeys.map((k) => ({ name: k.trim(), grade: "" })));
       setBulk(students);
       // Load the first student into the preview.
       loadStudent(students[0], subjectKeys.map((k) => k.trim()));
@@ -695,7 +701,7 @@ export default function ProgressReportMaker() {
     setKlass(s.klass);
     setRoll(s.roll);
     const order = names ?? subjectNames;
-    setSubjects(order.map((name) => ({ name, mark: s.marks[name] ?? "" })));
+    setSubjects(order.map((name) => ({ name, grade: s.grades[name] ?? "" })));
   };
 
   const downloadAll = useCallback(async () => {
@@ -710,7 +716,7 @@ export default function ProgressReportMaker() {
           setStudentName(s.name);
           setKlass(s.klass);
           setRoll(s.roll);
-          setSubjects(names.map((name) => ({ name, mark: s.marks[name] ?? "" })));
+          setSubjects(names.map((name) => ({ name, grade: s.grades[name] ?? "" })));
         });
         // Allow the browser to paint the freshly-flushed DOM.
         await sleep(60);
@@ -836,64 +842,48 @@ export default function ProgressReportMaker() {
 
         {/* Subjects */}
         <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <h2 className="font-display text-xl text-brand">Subjects & marks</h2>
-            <label className="text-sm text-ink/70">
-              Max mark
-              <input
-                type="number"
-                min={1}
-                value={maxMark}
-                onChange={(e) => setMaxMark(Math.max(1, Number(e.target.value) || 100))}
-                className="ml-2 w-20 rounded-lg border border-black/15 px-2 py-1 text-sm outline-none focus:border-brand"
-              />
-            </label>
-          </div>
+          <h2 className="font-display text-xl text-brand">Subjects & grades</h2>
           <p className="mt-1 text-xs text-ink/45">
-            Enter a mark — the card prints the <strong>grade</strong> (not the mark). Blank subjects are skipped.
+            Pick a <strong>grade</strong> for each subject — the remark fills in automatically. Subjects left blank are skipped.
           </p>
 
           <div className="mt-4 space-y-2">
-            <div className="grid grid-cols-[1fr_90px_70px_28px] gap-2 px-1 text-xs font-medium text-ink/50">
+            <div className="grid grid-cols-[1fr_170px_28px] gap-2 px-1 text-xs font-medium text-ink/50">
               <span>Subject</span>
-              <span>Mark</span>
               <span>Grade</span>
               <span />
             </div>
-            {subjects.map((s, i) => {
-              const raw = s.mark.trim();
-              const n = Number(raw);
-              const g = raw !== "" && !Number.isNaN(n) ? gradeFor(maxMark > 0 ? (n / maxMark) * 100 : 0) : null;
-              return (
-                <div key={i} className="grid grid-cols-[1fr_90px_70px_28px] items-center gap-2">
-                  <input
-                    type="text"
-                    value={s.name}
-                    onChange={(e) => setSubjectName(i, e.target.value)}
-                    placeholder="Subject"
-                    className="rounded-lg border border-black/15 px-3 py-1.5 text-sm outline-none focus:border-brand"
-                  />
-                  <input
-                    type="number"
-                    value={s.mark}
-                    onChange={(e) => setSubjectMark(i, e.target.value)}
-                    placeholder="—"
-                    className="rounded-lg border border-black/15 px-2 py-1.5 text-sm outline-none focus:border-brand"
-                  />
-                  <span className={`text-center text-sm font-bold ${g ? "text-brand" : "text-ink/30"}`}>
-                    {g ? g.grade : "—"}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => removeSubject(i)}
-                    className="text-ink/30 transition hover:text-red-600"
-                    aria-label="Remove subject"
-                  >
-                    ✕
-                  </button>
-                </div>
-              );
-            })}
+            {subjects.map((s, i) => (
+              <div key={i} className="grid grid-cols-[1fr_170px_28px] items-center gap-2">
+                <input
+                  type="text"
+                  value={s.name}
+                  onChange={(e) => setSubjectName(i, e.target.value)}
+                  placeholder="Subject"
+                  className="rounded-lg border border-black/15 px-3 py-1.5 text-sm outline-none focus:border-brand"
+                />
+                <select
+                  value={normalizeGrade(s.grade)}
+                  onChange={(e) => setSubjectGrade(i, e.target.value)}
+                  className="rounded-lg border border-black/15 px-2 py-1.5 text-sm outline-none focus:border-brand"
+                >
+                  <option value="">— Select grade —</option>
+                  {GRADE_LIST.map((g) => (
+                    <option key={g.grade} value={g.grade}>
+                      {g.grade} · {g.remark}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => removeSubject(i)}
+                  className="text-ink/30 transition hover:text-red-600"
+                  aria-label="Remove subject"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
           </div>
           <button
             type="button"
@@ -1032,7 +1022,7 @@ export default function ProgressReportMaker() {
         <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm">
           <h2 className="font-display text-xl text-brand">Bulk from Excel</h2>
           <p className="mt-1 text-xs text-ink/45">
-            Upload a sheet with <strong>Name, Class, Roll No</strong> and one column per subject. A card is generated for every student.
+            Upload a sheet with <strong>Name, Class, Roll No</strong> and one <strong>grade</strong> column per subject (A+, A, B+, B, C+, C, D+, D). A card is generated for every student.
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
             <button
