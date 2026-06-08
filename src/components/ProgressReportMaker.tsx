@@ -366,11 +366,13 @@ const REPORT_CSS = `
 .zr2{ background:var(--cream); }
 .zr2 .frame1{ position:absolute; inset:22px; border:3px solid var(--maroon); }
 .zr2 .frame2{ position:absolute; inset:30px; border:1px solid var(--gold-deep); }
-.zr2 .head{ position:absolute; top:54px; left:60px; right:60px; gap:6px; }
-.zr2 .head img{ height:74px; }
-.zr2 .head .rtitle{ font-size:26px; color:var(--maroon); margin-top:6px; }
-.zr2 .head .rtitle{ border-bottom:2px solid var(--gold-deep); padding-bottom:8px; }
-.zr2 .head .rsub{ color:var(--gold-deep); font-weight:600; }
+.zr2 .head{ position:absolute; top:50px; left:60px; right:60px; gap:4px; }
+.zr2 .head img{ height:84px; width:auto; margin-bottom:6px; }
+.zr2 .head .rtitle{ font-size:27px; color:var(--maroon); margin-top:8px; padding-bottom:10px; }
+.zr2 .head .rtitle{ position:relative; }
+.zr2 .head .rtitle::after{ content:''; position:absolute; left:50%; bottom:0; transform:translateX(-50%);
+  width:160px; height:2px; background:linear-gradient(90deg,transparent,var(--gold-deep),transparent); }
+.zr2 .head .rsub{ color:var(--gold-deep); font-weight:600; margin-top:8px; }
 .zr2 .body{ position:absolute; top:290px; left:60px; right:60px; bottom:54px;
   display:flex; flex-direction:column; gap:22px; }
 .zr2 .photo{ border:2px solid var(--gold-deep); border-radius:8px; background:#fff; }
@@ -586,7 +588,22 @@ export default function ProgressReportMaker() {
     const node = reportRef.current;
     if (!node) throw new Error("Nothing to render.");
     if (document.fonts?.ready) await document.fonts.ready;
-    return toPng(node, { pixelRatio: 3, cacheBust: true, backgroundColor: REPORT_BG[design] });
+    // Make sure every image (logo, photo, signatures) is fully decoded before
+    // capturing — otherwise html-to-image can drop a not-yet-loaded image
+    // (notably the larger dark logo on the Elegant Gold design).
+    const imgs = Array.from(node.querySelectorAll("img"));
+    await Promise.all(
+      imgs.map((img) =>
+        img.complete && img.naturalWidth > 0
+          ? Promise.resolve()
+          : img.decode().catch(() => undefined),
+      ),
+    );
+    // Two passes: the first toPng warms html-to-image's internal image cache so
+    // the second pass embeds every asset reliably.
+    const opts = { pixelRatio: 3, backgroundColor: REPORT_BG[design] };
+    await toPng(node, opts);
+    return toPng(node, opts);
   }, [design]);
 
   const onDownload = useCallback(async () => {
