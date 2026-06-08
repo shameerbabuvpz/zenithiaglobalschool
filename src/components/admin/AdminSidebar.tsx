@@ -30,6 +30,8 @@ const groups: NavGroup[] = [
       { href: "/admin/notice-board", label: "Notice Board", icon: "📢" },
       { href: "/admin/progress-report", label: "Progress Report", icon: "📊" },
       { href: "/admin/certificates", label: "Certificate Maker", icon: "🎖" },
+      { href: "/admin/id-cards", label: "ID Card Maker", icon: "🪪" },
+      { href: "/admin/letters", label: "Letters & TC", icon: "📄" },
     ],
   },
 ];
