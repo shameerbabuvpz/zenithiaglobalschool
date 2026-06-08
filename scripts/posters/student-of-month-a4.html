@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<!-- Headline: Archivo (close to Oskari G2). Body: Inter. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  @page { size: A4 portrait; margin: 0; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root{
+    --maroon:#7A1F35; --maroon-deep:#4d1322; --maroon-glow:#94304a;
+    --beige:#D8C3A5; --beige-soft:rgba(216,195,165,.65); --ink:#181819; --white:#F7F5F2;
+  }
+  html,body{ width:210mm; height:297mm; }
+  body{
+    font-family:'Inter','Helvetica Neue',Arial,sans-serif; color:var(--white);
+    position:relative; overflow:hidden; background:var(--maroon);
+  }
+  .display{ font-family:'Archivo','Helvetica Neue',Arial,sans-serif; }
+
+  /* cinematic maroon wall + soft floor */
+  .scene{ position:absolute; inset:0;
+    background:radial-gradient(82% 52% at 50% 30%, var(--maroon-glow) 0%, var(--maroon) 44%, var(--maroon-deep) 100%); }
+  .floor{ position:absolute; left:0; right:0; bottom:0; height:70mm;
+    background:linear-gradient(180deg, rgba(24,24,25,0) 0%, rgba(216,195,165,.10) 32%, rgba(216,195,165,.22) 100%);
+    border-top:0.4pt solid rgba(216,195,165,.18); }
+  .vignette{ position:absolute; inset:0; pointer-events:none;
+    background:radial-gradient(120% 80% at 50% 36%, rgba(24,24,25,0) 50%, rgba(24,24,25,.55) 100%); }
+  .frame{ position:absolute; inset:6mm; border:0.8pt solid rgba(216,195,165,.45); border-radius:2mm; }
+  .frame-inner{ position:absolute; inset:8mm; border:0.5pt solid rgba(216,195,165,.22); border-radius:1.5mm; }
+
+  /* decorative corner flourishes */
+  .corner{ position:absolute; width:34mm; height:34mm; opacity:.85; }
+  .corner svg{ width:100%; height:100%; }
+  .corner.tl{ top:9mm; left:9mm; }
+  .corner.tr{ top:9mm; right:9mm; transform:scaleX(-1); }
+  .corner.bl{ bottom:9mm; left:9mm; transform:scaleY(-1); }
+  .corner.br{ bottom:9mm; right:9mm; transform:scale(-1,-1); }
+
+  /* faint sparkles scattered on the wall */
+  .spark{ position:absolute; color:var(--beige); opacity:.18; font-size:14pt; line-height:1; }
+
+  .page{ position:absolute; inset:6mm; padding:11mm 14mm 10mm; display:flex; flex-direction:column; align-items:center; text-align:center; z-index:2; }
+
+  /* header */
+  .head img{ height:26mm; }
+
+  /* star medal emblem */
+  .emblem{ margin-top:5mm; width:23mm; height:23mm; }
+  .emblem svg{ width:100%; height:100%; }
+
+  /* month banner */
+  .eyebrow{ margin-top:4mm; font-size:10.5pt; letter-spacing:.5em; color:var(--beige); font-weight:600; text-transform:uppercase; }
+  .month{ margin-top:4mm; display:inline-flex; align-items:center; gap:7mm;
+    font-size:33pt; letter-spacing:.05em; color:var(--white); font-weight:900; text-transform:uppercase; }
+  .month::before,.month::after{ content:"\2756"; font-size:13pt; color:var(--beige); font-weight:400; }
+  /* >> EDIT: replace [ MONTH YEAR ] below << */
+
+  .title{ margin-top:5mm; font-size:20pt; letter-spacing:.32em; color:var(--beige); font-weight:800; text-transform:uppercase; }
+
+  /* photo + flanking laurels */
+  .photo-wrap{ margin-top:8mm; position:relative; display:flex; align-items:center; justify-content:center; }
+  .laurel{ width:28mm; height:80mm; }
+  .laurel svg{ width:100%; height:100%; }
+  .laurel.right{ transform:scaleX(-1); }
+  .photo{ width:84mm; height:84mm; border-radius:50%; margin:0 4mm;
+    border:2.4pt solid var(--beige); background:rgba(247,245,242,.06);
+    box-shadow:0 0 0 1.4mm rgba(122,31,53,.55), 0 6mm 18mm rgba(24,24,25,.45);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3mm;
+    overflow:hidden; position:relative; }
+  /* >> EDIT: drop a <img> here, or set background-image on .photo << */
+  .photo .ph-icon{ font-size:30pt; color:var(--beige-soft); line-height:1; }
+  .photo .ph-text{ font-size:8.5pt; letter-spacing:.34em; color:rgba(216,195,165,.7); text-transform:uppercase; }
+  /* ribbon tails under the photo */
+  .ribbon{ position:absolute; bottom:-7mm; left:50%; transform:translateX(-50%); width:40mm; height:18mm; z-index:-1; }
+  .ribbon svg{ width:100%; height:100%; }
+
+  /* star rating row */
+  .stars{ margin-top:9mm; font-size:14pt; letter-spacing:.5em; color:var(--beige); }
+
+  /* name + class placeholders */
+  .name{ margin-top:5mm; font-size:27pt; letter-spacing:.05em; color:var(--white); font-weight:800; text-transform:uppercase; }
+  .name-rule{ margin:4mm auto 0; display:flex; align-items:center; justify-content:center; gap:4mm; color:var(--beige); font-size:11pt; }
+  .name-rule .seg{ width:26mm; height:1.2pt; background:linear-gradient(90deg,transparent,var(--beige),transparent); opacity:.85; }
+  .klass{ margin-top:6mm; display:inline-block; padding:3.2mm 11mm; border:0.9pt solid rgba(216,195,165,.5);
+    border-radius:30mm; font-size:12.5pt; letter-spacing:.22em; color:var(--beige); font-weight:600; text-transform:uppercase; }
+  /* >> EDIT: replace [ STUDENT NAME ] and [ CLASS / DIVISION ] << */
+  .ph{ color:rgba(216,195,165,.85); }
+
+  .foot{ margin-top:auto; padding-top:8mm; }
+  .foot .line{ display:flex; align-items:center; justify-content:center; gap:4mm; color:var(--beige); font-size:9pt; margin-bottom:3.5mm; }
+  .foot .line .seg{ width:24mm; height:1pt; background:var(--beige); opacity:.7; }
+  .foot .url{ font-size:11.5pt; letter-spacing:.2em; color:var(--beige); font-weight:600; font-family:'Archivo',sans-serif; }
+  .foot .tag{ margin-top:2.5mm; font-size:8pt; letter-spacing:.36em; color:rgba(216,195,165,.7); text-transform:uppercase; }
+</style>
+</head>
+<body>
+  <div class="scene"></div>
+  <div class="floor"></div>
+  <div class="vignette"></div>
+  <div class="frame"></div>
+  <div class="frame-inner"></div>
+
+  <!-- corner flourishes -->
+  <div class="corner tl"><svg viewBox="0 0 100 100" fill="none" stroke="#D8C3A5" stroke-width="1.4" stroke-linecap="round">
+    <path d="M4 40 Q4 4 40 4"/><path d="M12 46 Q12 12 46 12" opacity=".6"/>
+    <circle cx="4" cy="40" r="2.2" fill="#D8C3A5" stroke="none"/><circle cx="40" cy="4" r="2.2" fill="#D8C3A5" stroke="none"/>
+    <path d="M22 22 l8 0 M22 22 l0 8" opacity=".8"/></svg></div>
+  <div class="corner tr"><svg viewBox="0 0 100 100" fill="none" stroke="#D8C3A5" stroke-width="1.4" stroke-linecap="round">
+    <path d="M4 40 Q4 4 40 4"/><path d="M12 46 Q12 12 46 12" opacity=".6"/>
+    <circle cx="4" cy="40" r="2.2" fill="#D8C3A5" stroke="none"/><circle cx="40" cy="4" r="2.2" fill="#D8C3A5" stroke="none"/>
+    <path d="M22 22 l8 0 M22 22 l0 8" opacity=".8"/></svg></div>
+  <div class="corner bl"><svg viewBox="0 0 100 100" fill="none" stroke="#D8C3A5" stroke-width="1.4" stroke-linecap="round">
+    <path d="M4 40 Q4 4 40 4"/><path d="M12 46 Q12 12 46 12" opacity=".6"/>
+    <circle cx="4" cy="40" r="2.2" fill="#D8C3A5" stroke="none"/><circle cx="40" cy="4" r="2.2" fill="#D8C3A5" stroke="none"/>
+    <path d="M22 22 l8 0 M22 22 l0 8" opacity=".8"/></svg></div>
+  <div class="corner br"><svg viewBox="0 0 100 100" fill="none" stroke="#D8C3A5" stroke-width="1.4" stroke-linecap="round">
+    <path d="M4 40 Q4 4 40 4"/><path d="M12 46 Q12 12 46 12" opacity=".6"/>
+    <circle cx="4" cy="40" r="2.2" fill="#D8C3A5" stroke="none"/><circle cx="40" cy="4" r="2.2" fill="#D8C3A5" stroke="none"/>
+    <path d="M22 22 l8 0 M22 22 l0 8" opacity=".8"/></svg></div>
+
+  <!-- scattered sparkles -->
+  <div class="spark" style="top:60mm; left:22mm;">&#10038;</div>
+  <div class="spark" style="top:96mm; right:20mm; font-size:18pt;">&#10038;</div>
+  <div class="spark" style="top:150mm; left:18mm; font-size:11pt;">&#10038;</div>
+  <div class="spark" style="top:188mm; right:24mm; font-size:16pt;">&#10038;</div>
+  <div class="spark" style="top:120mm; left:30mm; font-size:9pt;">&#10038;</div>
+
+  <div class="page">
+    <div class="head">
+      <img src="../../public/brand/logo-full-white.png" alt="Zenithia Global School" />
+    </div>
+
+    <!-- star medal emblem -->
+    <div class="emblem"><svg viewBox="0 0 100 100">
+      <g fill="none" stroke="#D8C3A5" stroke-width="2.2">
+        <circle cx="50" cy="44" r="24"/>
+        <circle cx="50" cy="44" r="19" stroke-width="1" opacity=".55"/>
+      </g>
+      <path d="M50 30 l4.5 9.2 10.1 1.5 -7.3 7.1 1.7 10.1 -9-4.8 -9 4.8 1.7-10.1 -7.3-7.1 10.1-1.5z" fill="#D8C3A5"/>
+      <path d="M38 64 l-7 22 12-6 8 9 4-20z" fill="#7A1F35" stroke="#D8C3A5" stroke-width="1.6"/>
+      <path d="M62 64 l7 22 -12-6 -8 9 -4-20z" fill="#7A1F35" stroke="#D8C3A5" stroke-width="1.6"/>
+    </svg></div>
+
+    <div class="eyebrow">Celebrating Excellence</div>
+
+    <!-- EDIT MONTH HERE -->
+    <div class="month display">June 2026</div>
+
+    <div class="title display">Student of the Month</div>
+
+    <!-- ADD PHOTO HERE: place <img> inside .photo, or set background-image on .photo -->
+    <div class="photo-wrap">
+      <div class="laurel left"><svg viewBox="0 0 60 170" fill="none" stroke="#D8C3A5" stroke-width="2" stroke-linecap="round">
+        <path d="M52 8 Q22 50 26 162"/>
+        <g fill="#D8C3A5" stroke="none">
+          <ellipse cx="44" cy="30" rx="9" ry="4" transform="rotate(-40 44 30)"/>
+          <ellipse cx="38" cy="50" rx="10" ry="4.4" transform="rotate(-30 38 50)"/>
+          <ellipse cx="33" cy="72" rx="11" ry="4.6" transform="rotate(-22 33 72)"/>
+          <ellipse cx="30" cy="95" rx="11" ry="4.6" transform="rotate(-14 30 95)"/>
+          <ellipse cx="28" cy="118" rx="10" ry="4.4" transform="rotate(-8 28 118)"/>
+          <ellipse cx="27" cy="140" rx="8.5" ry="4" transform="rotate(-4 27 140)"/>
+        </g>
+      </svg></div>
+
+      <div class="photo">
+        <div class="ph-icon">&#128247;</div>
+        <div class="ph-text">Add Photo</div>
+        <div class="ribbon"><svg viewBox="0 0 120 60" fill="#7A1F35" stroke="#D8C3A5" stroke-width="2">
+          <path d="M30 4 L54 4 L48 40 L42 32 L34 40 Z"/>
+          <path d="M90 4 L66 4 L72 40 L78 32 L86 40 Z"/>
+        </svg></div>
+      </div>
+
+      <div class="laurel right"><svg viewBox="0 0 60 170" fill="none" stroke="#D8C3A5" stroke-width="2" stroke-linecap="round">
+        <path d="M52 8 Q22 50 26 162"/>
+        <g fill="#D8C3A5" stroke="none">
+          <ellipse cx="44" cy="30" rx="9" ry="4" transform="rotate(-40 44 30)"/>
+          <ellipse cx="38" cy="50" rx="10" ry="4.4" transform="rotate(-30 38 50)"/>
+          <ellipse cx="33" cy="72" rx="11" ry="4.6" transform="rotate(-22 33 72)"/>
+          <ellipse cx="30" cy="95" rx="11" ry="4.6" transform="rotate(-14 30 95)"/>
+          <ellipse cx="28" cy="118" rx="10" ry="4.4" transform="rotate(-8 28 118)"/>
+          <ellipse cx="27" cy="140" rx="8.5" ry="4" transform="rotate(-4 27 140)"/>
+        </g>
+      </svg></div>
+    </div>
+
+    <!-- star rating accent -->
+    <div class="stars">&#9733; &#9733; &#9733; &#9733; &#9733;</div>
+
+    <!-- EDIT NAME HERE -->
+    <div class="name display"><span class="ph">[ Student Name ]</span></div>
+    <div class="name-rule"><span class="seg"></span>&#10022;<span class="seg"></span></div>
+
+    <!-- EDIT CLASS / DIVISION HERE -->
+    <div class="klass"><span class="ph">Class / Division</span></div>
+
+    <div class="foot">
+      <div class="line"><span class="seg"></span>&#10038;<span class="seg"></span></div>
+      <div class="url">zenithiaglobalschool.com</div>
+      <div class="tag">Knowledge &bull; Character &bull; Excellence</div>
+    </div>
+  </div>
+</body>
+</html>

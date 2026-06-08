@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<!-- Headline: Archivo (wide geometric grotesque, close to Oskari G2). Body: Inter. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  @page { size: A3 portrait; margin: 0; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root{
+    --maroon:#7A1F35; --maroon-deep:#4d1322; --maroon-glow:#94304a;
+    --beige:#D8C3A5; --ink:#181819; --white:#F7F5F2;
+  }
+  html,body{ width:297mm; height:420mm; }
+  body{
+    font-family:'Inter', 'Helvetica Neue', Arial, sans-serif; color:var(--white);
+    position:relative; overflow:hidden; background:var(--maroon);
+  }
+  .display{ font-family:'Archivo', 'Helvetica Neue', Arial, sans-serif; }
+
+  /* cinematic maroon wall + soft floor, like the reference */
+  .scene{ position:absolute; inset:0;
+    background:
+      radial-gradient(80% 52% at 50% 30%, var(--maroon-glow) 0%, var(--maroon) 42%, var(--maroon-deep) 100%); }
+  .floor{ position:absolute; left:0; right:0; bottom:0; height:90mm;
+    background:linear-gradient(180deg, rgba(24,24,25,0) 0%, rgba(216,195,165,.10) 30%, rgba(216,195,165,.22) 100%);
+    border-top:0.4pt solid rgba(216,195,165,.18); }
+  .vignette{ position:absolute; inset:0; pointer-events:none;
+    background:radial-gradient(120% 80% at 50% 38%, rgba(24,24,25,0) 52%, rgba(24,24,25,.55) 100%); }
+
+  /* slim beige trim frame for print */
+  .frame{ position:absolute; inset:7mm; border:0.8pt solid rgba(216,195,165,.45); border-radius:2mm; }
+
+  .page{ position:absolute; inset:7mm; padding:9mm 13mm 9mm; display:flex; flex-direction:column; }
+
+  /* header */
+  .head{ text-align:center; }
+  .head img{ height:42mm; }
+
+  /* section heading */
+  .section{ margin-top:8mm; }
+  .badge{ text-align:center; }
+  .badge h2{ font-size:32pt; letter-spacing:.26em; color:var(--white); font-weight:800; }
+  .badge .uline{ margin:5mm auto 0; width:46mm; height:3pt; background:var(--beige); border-radius:2pt; }
+
+  /* vision — two-tone white + beige */
+  .vision-text{ margin:7mm auto 0; max-width:262mm; text-align:center;
+    font-size:21pt; line-height:1.48; font-weight:400; color:var(--white); }
+  .vision-text .accent{ color:var(--beige); font-weight:500; }
+
+  .divider{ margin:6mm auto; width:80mm; height:1.6pt;
+    background:linear-gradient(90deg,transparent,var(--beige),transparent); position:relative; opacity:.85; }
+  .divider::after{ content:"\2756"; position:absolute; top:-10pt; left:50%; transform:translateX(-50%);
+    color:var(--beige); font-size:14pt; background:var(--maroon); padding:0 4mm; }
+
+  /* mission — translucent panels on the dark wall */
+  .mission-grid{ margin-top:9mm; display:grid; grid-template-columns:1fr 1fr; gap:11mm 13mm; }
+  .card{ background:rgba(247,245,242,.05); border:0.7pt solid rgba(216,195,165,.32);
+    border-radius:3mm; padding:9mm 12mm 9mm 13mm; position:relative; }
+  .card .no{ position:absolute; top:-8mm; left:10mm; width:16mm; height:16mm; border-radius:50%;
+    background:var(--beige); color:var(--maroon); font-family:'Archivo',sans-serif;
+    font-weight:800; font-size:17pt; display:flex; align-items:center; justify-content:center;
+    box-shadow:0 2mm 5mm rgba(24,24,25,.4); }
+  .card h3{ margin-top:4mm; font-size:20pt; color:var(--beige); letter-spacing:.01em; font-weight:700; }
+  .card p{ margin-top:4mm; font-size:14.5pt; line-height:1.46; color:rgba(247,245,242,.92); font-weight:400; }
+
+  .foot{ margin-top:auto; padding-top:6mm; text-align:center; }
+  .foot .line{ width:46mm; height:1pt; background:var(--beige); opacity:.7; margin:0 auto 4mm; }
+  .foot .url{ font-size:14pt; letter-spacing:.20em; color:var(--beige); font-weight:600; font-family:'Archivo',sans-serif; }
+  .foot .tag{ margin-top:2.5mm; font-size:10pt; letter-spacing:.38em; color:rgba(216,195,165,.7); text-transform:uppercase; }
+</style>
+</head>
+<body>
+  <div class="scene"></div>
+  <div class="floor"></div>
+  <div class="vignette"></div>
+  <div class="frame"></div>
+
+  <div class="page">
+    <div class="head">
+      <img src="../../public/brand/logo-full-white.png" alt="Zenithia Global School" />
+    </div>
+
+    <div class="section">
+      <div class="badge"><h2 class="display">OUR VISION</h2><div class="uline"></div></div>
+      <p class="vision-text">
+        To make the earliest years of childhood joyful and meaningful &mdash; laying a strong
+        foundation for lifelong academic excellence,
+        <span class="accent">while nurturing children of unwavering moral character, genuine integrity,
+        deep social responsibility, and a lasting reverence for human relationships.</span>
+      </p>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="section">
+      <div class="badge"><h2 class="display">OUR MISSION</h2><div class="uline"></div></div>
+      <div class="mission-grid">
+        <div class="card">
+          <div class="no">1</div>
+          <h3 class="display">Rooted in Values</h3>
+          <p>To instil strong moral and spiritual principles in young hearts from the earliest age &mdash;
+             nurturing an inner compass that guides children toward good character, shields them from
+             harmful influences, and deepens their love for family.</p>
+        </div>
+        <div class="card">
+          <div class="no">2</div>
+          <h3 class="display">Strong Academic Foundation</h3>
+          <p>To offer a world-class learning environment from the very beginning &mdash; cultivating
+             intellectual strength and academic excellence that prepare children to thrive in any
+             field of study they choose to pursue.</p>
+        </div>
+        <div class="card">
+          <div class="no">3</div>
+          <h3 class="display">Empathy and Social Grace</h3>
+          <p>To safeguard the innocence of childhood while raising children who are kind, well-mannered,
+             and deeply compassionate &mdash; young individuals who become a blessing to their homes and
+             an inspiration to society.</p>
+        </div>
+        <div class="card">
+          <div class="no">4</div>
+          <h3 class="display">Multilingual Confidence</h3>
+          <p>To build fluency in multiple languages and confident communication from the pre-primary
+             years &mdash; empowering children to express their ideas with clarity, dignity, and
+             assurance anywhere in the world.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="foot">
+      <div class="line"></div>
+      <div class="url">zenithiaglobalschool.com</div>
+      <div class="tag">Knowledge &bull; Character &bull; Excellence</div>
+    </div>
+  </div>
+</body>
+</html>
