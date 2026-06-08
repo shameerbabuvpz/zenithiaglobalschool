@@ -16,10 +16,10 @@ export default async function PanelLayout({
   if (!session) redirect("/admin/login");
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="mx-auto flex max-w-7xl flex-col lg:flex-row">
-        {/* Sidebar */}
-        <aside className="shrink-0 border-b border-black/5 bg-white lg:sticky lg:top-0 lg:h-screen lg:w-64 lg:self-start lg:overflow-y-auto lg:border-b-0 lg:border-r">
+    <div className="min-h-screen bg-gray-50 lg:h-screen lg:overflow-hidden">
+      <div className="mx-auto flex max-w-7xl flex-col lg:h-full lg:flex-row">
+        {/* Sidebar — fixed on desktop, scrolls internally if the menu is long */}
+        <aside className="shrink-0 border-b border-black/5 bg-white lg:h-full lg:w-64 lg:overflow-y-auto lg:border-b-0 lg:border-r">
           <div className="flex items-center justify-between p-5">
             <Link href="/admin" className="flex items-center gap-2">
               <Image src="/brand/logo-mark.png" alt="Zenithia" width={32} height={36} />
@@ -33,9 +33,9 @@ export default async function PanelLayout({
           </div>
         </aside>
 
-        {/* Main */}
-        <div className="flex-1">
-          <header className="sticky top-0 z-10 flex items-center justify-between border-b border-black/5 bg-white px-6 py-4">
+        {/* Main column — header stays fixed, only the content below it scrolls */}
+        <div className="flex min-w-0 flex-1 flex-col lg:h-full lg:overflow-hidden">
+          <header className="sticky top-0 z-10 flex shrink-0 items-center justify-between border-b border-black/5 bg-white px-6 py-4">
             <div className="text-sm text-ink/60">
               Signed in as <span className="font-medium text-ink">{session.email}</span>
             </div>
@@ -50,7 +50,7 @@ export default async function PanelLayout({
               </form>
             </div>
           </header>
-          <div className="p-6">{children}</div>
+          <main className="p-6 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">{children}</main>
         </div>
       </div>
     </div>
