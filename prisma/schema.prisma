@@ -113,3 +113,19 @@ model ContactMessage {
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
 }
+
+// Reusable class-teacher / principal presets for the Progress Report tool.
+// Stores the staff name and an uploaded signature image (served from
+// /media), so saved signatures persist in the database across devices.
+model ReportStaff {
+  id           String   @id @default(cuid())
+  role         String   // "teacher" | "principal"
+  name         String
+  signatureUrl String?
+  order        Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([role])
+}
+

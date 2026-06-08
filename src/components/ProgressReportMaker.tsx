@@ -4,6 +4,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { toPng } from "html-to-image";
 import * as XLSX from "xlsx";
+import {
+  listReportStaffAction,
+  saveReportStaffAction,
+  deleteReportStaffAction,
+} from "@/lib/actions";
 
 /**
  * Progress Report card maker (admin only).
@@ -91,9 +96,6 @@ const DEFAULT_SUBJECTS = [
 ];
 
 type StaffPreset = { id: string; name: string; signature: string | null };
-
-const TEACHER_KEY = "zenithia-report-teachers-v1";
-const PRINCIPAL_KEY = "zenithia-report-principals-v1";
 
 const CLASS_OPTIONS = [
   "LKG", "UKG", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12",
@@ -412,6 +414,29 @@ function fileToDataUrl(file: File): Promise<string> {
   });
 }
 
+function dataUrlToBlob(dataUrl: string): Blob {
+  const [head, b64] = dataUrl.split(",");
+  const mime = head.match(/:(.*?);/)?.[1] || "image/png";
+  const bin = atob(b64);
+  const arr = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return new Blob([arr], { type: mime });
+}
+
+// Make sure a signature is a persistent URL. Freshly uploaded signatures are
+// data URLs (from FileReader); upload them to /api/upload (server storage) and
+// return the resulting /media URL. Already-stored URLs are returned as-is.
+async function ensureSignatureUrl(sig: string | null): Promise<string | null> {
+  if (!sig) return null;
+  if (!sig.startsWith("data:")) return sig;
+  const fd = new FormData();
+  fd.append("file", dataUrlToBlob(sig), "signature.png");
+  const res = await fetch("/api/upload", { method: "POST", body: fd });
+  if (!res.ok) throw new Error("Signature upload failed");
+  const { url } = (await res.json()) as { url: string };
+  return url;
+}
+
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 type BulkStudent = { name: string; klass: string; roll: string; grades: Record<string, string> };
@@ -466,16 +491,19 @@ export default function ProgressReportMaker() {
     return () => ro.disconnect();
   }, []);
 
-  useEffect(() => {
+  const refreshStaff = useCallback(async () => {
     try {
-      const t = localStorage.getItem(TEACHER_KEY);
-      if (t) setTeacherPresets(JSON.parse(t));
-      const p = localStorage.getItem(PRINCIPAL_KEY);
-      if (p) setPrincipalPresets(JSON.parse(p));
+      const { teachers, principals } = await listReportStaffAction();
+      setTeacherPresets(teachers);
+      setPrincipalPresets(principals);
     } catch {
       /* ignore */
     }
   }, []);
+
+  useEffect(() => {
+    refreshStaff();
+  }, [refreshStaff]);
 
   const data: ReportData = useMemo(
     () => ({
@@ -538,55 +566,45 @@ export default function ProgressReportMaker() {
     }
   };
 
-  const saveStaff = (role: "teacher" | "principal") => {
+  const saveStaff = async (role: "teacher" | "principal") => {
     const name = (role === "teacher" ? teacher : principal).trim();
     if (!name) {
       alert("Enter a name first.");
       return;
     }
     const sig = role === "teacher" ? teacherSig : principalSig;
-    const preset: StaffPreset = { id: `s${Date.now()}`, name, signature: sig };
-    if (role === "teacher") {
-      const next = [...teacherPresets.filter((x) => x.name.toLowerCase() !== name.toLowerCase()), preset];
-      setTeacherPresets(next);
-      setSelectedTeacherId(preset.id);
-      try {
-        localStorage.setItem(TEACHER_KEY, JSON.stringify(next));
-      } catch {
-        /* ignore */
+    try {
+      const url = await ensureSignatureUrl(sig);
+      const res = await saveReportStaffAction(role, name, url);
+      if (!res.ok) {
+        alert(res.error || "Could not save.");
+        return;
       }
-    } else {
-      const next = [...principalPresets.filter((x) => x.name.toLowerCase() !== name.toLowerCase()), preset];
-      setPrincipalPresets(next);
-      setSelectedPrincipalId(preset.id);
-      try {
-        localStorage.setItem(PRINCIPAL_KEY, JSON.stringify(next));
-      } catch {
-        /* ignore */
+      // Use the persisted URL locally so the card and future saves reuse it.
+      if (role === "teacher") {
+        setTeacherSig(url);
+        setSelectedTeacherId(res.id ?? "");
+      } else {
+        setPrincipalSig(url);
+        setSelectedPrincipalId(res.id ?? "");
       }
+      await refreshStaff();
+    } catch {
+      alert("Could not save the signature. Please try again.");
     }
   };
 
-  const deleteStaff = (role: "teacher" | "principal") => {
-    if (role === "teacher") {
-      const next = teacherPresets.filter((x) => x.id !== selectedTeacherId);
-      setTeacherPresets(next);
-      setSelectedTeacherId("");
-      try {
-        localStorage.setItem(TEACHER_KEY, JSON.stringify(next));
-      } catch {
-        /* ignore */
-      }
-    } else {
-      const next = principalPresets.filter((x) => x.id !== selectedPrincipalId);
-      setPrincipalPresets(next);
-      setSelectedPrincipalId("");
-      try {
-        localStorage.setItem(PRINCIPAL_KEY, JSON.stringify(next));
-      } catch {
-        /* ignore */
-      }
+  const deleteStaff = async (role: "teacher" | "principal") => {
+    const id = role === "teacher" ? selectedTeacherId : selectedPrincipalId;
+    if (!id) return;
+    const res = await deleteReportStaffAction(id);
+    if (!res.ok) {
+      alert(res.error || "Could not delete.");
+      return;
     }
+    if (role === "teacher") setSelectedTeacherId("");
+    else setSelectedPrincipalId("");
+    await refreshStaff();
   };
 
   /* single download */

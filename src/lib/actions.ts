@@ -286,6 +286,96 @@ export async function addImageToGalleryAction(
   }
 }
 
+/* ----------------------- Report staff (signatures) ----------------------- */
+
+export type ReportStaffDTO = { id: string; name: string; signature: string | null };
+
+function toStaffDTO(s: { id: string; name: string; signatureUrl: string | null }): ReportStaffDTO {
+  return { id: s.id, name: s.name, signature: s.signatureUrl };
+}
+
+/**
+ * List the saved class-teacher and principal presets (name + signature image)
+ * for the Progress Report tool. Stored in the database so they persist across
+ * devices and browsers.
+ */
+export async function listReportStaffAction(): Promise<{
+  teachers: ReportStaffDTO[];
+  principals: ReportStaffDTO[];
+}> {
+  const session = await getSession();
+  if (!session) return { teachers: [], principals: [] };
+  const all = await prisma.reportStaff.findMany({ orderBy: { name: "asc" } });
+  return {
+    teachers: all.filter((s) => s.role === "teacher").map(toStaffDTO),
+    principals: all.filter((s) => s.role === "principal").map(toStaffDTO),
+  };
+}
+
+/**
+ * Save (or update) a teacher/principal preset with their signature URL.
+ * The signature image must already be uploaded via /api/upload. Presets are
+ * de-duplicated by role + name (case-insensitive); re-saving the same name
+ * replaces the record and removes the previous signature file.
+ */
+export async function saveReportStaffAction(
+  role: "teacher" | "principal",
+  name: string,
+  signatureUrl: string | null,
+): Promise<{ ok: boolean; id?: string; error?: string }> {
+  const session = await getSession();
+  if (!session) return { ok: false, error: "Unauthorized" };
+  if (role !== "teacher" && role !== "principal") return { ok: false, error: "Invalid role" };
+  const cleanName = name.trim();
+  if (!cleanName) return { ok: false, error: "Enter a name first" };
+
+  try {
+    const existing = await prisma.reportStaff.findFirst({
+      where: { role, name: { equals: cleanName, mode: "insensitive" } },
+    });
+    if (existing) {
+      if (existing.signatureUrl && existing.signatureUrl !== signatureUrl) {
+        await deleteUploadedImage(existing.signatureUrl);
+      }
+      const updated = await prisma.reportStaff.update({
+        where: { id: existing.id },
+        data: { name: cleanName, signatureUrl: signatureUrl || null },
+      });
+      revalidateAll();
+      return { ok: true, id: updated.id };
+    }
+    const created = await prisma.reportStaff.create({
+      data: { role, name: cleanName, signatureUrl: signatureUrl || null },
+    });
+    revalidateAll();
+    return { ok: true, id: created.id };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Could not save";
+    return { ok: false, error: msg };
+  }
+}
+
+/** Delete a saved teacher/principal preset and its signature image. */
+export async function deleteReportStaffAction(
+  id: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const session = await getSession();
+  if (!session) return { ok: false, error: "Unauthorized" };
+  if (!id) return { ok: false, error: "No id provided" };
+  try {
+    const existing = await prisma.reportStaff.findUnique({ where: { id } });
+    if (existing) {
+      if (existing.signatureUrl) await deleteUploadedImage(existing.signatureUrl);
+      await prisma.reportStaff.delete({ where: { id } });
+    }
+    revalidateAll();
+    return { ok: true };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Could not delete";
+    return { ok: false, error: msg };
+  }
+}
+
 /* --------------------------- Programs --------------------------- */
 
 export async function saveProgramAction(formData: FormData) {
