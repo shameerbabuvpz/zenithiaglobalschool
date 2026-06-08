@@ -32,6 +32,7 @@ const DARK_LOGO = "/brand/logo-full.png";
 
 const SCHOOL = "Zenithia Global School";
 const TAGLINE = "Knowledge · Character · Excellence";
+const DOMAIN = "www.zenithiaglobalschool.com";
 
 /* ----------------------------- Templates ------------------------------ */
 
@@ -204,7 +205,7 @@ function Design1({ title, date, body, footer }: DesignProps) {
       <div className="head">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={WHITE_LOGO} alt={SCHOOL} />
-        <div className="sname">{SCHOOL}</div>
+        <div className="dom">{DOMAIN}</div>
       </div>
       <div className="body">
         <div className="kick">അറിയിപ്പ് · NOTICE</div>
@@ -212,7 +213,9 @@ function Design1({ title, date, body, footer }: DesignProps) {
         {date ? <div className="ndate">{date}</div> : null}
         <NoticeBody body={body} />
       </div>
-      {footer ? <div className="foot">{footer}</div> : null}
+      <div className="foot">
+        <span className="sig">{footer}</span>
+      </div>
     </>
   );
 }
@@ -232,7 +235,10 @@ function Design2({ title, date, body, footer }: DesignProps) {
         <div className="divide" />
         {date ? <div className="ndate">{date}</div> : null}
         <NoticeBody body={body} />
-        {footer ? <div className="foot">{footer}</div> : null}
+        <div className="foot">
+          {footer ? <div className="sig">{footer}</div> : null}
+          <div className="web">{DOMAIN}</div>
+        </div>
       </div>
     </>
   );
@@ -246,13 +252,15 @@ function Design3({ title, date, body, footer }: DesignProps) {
         <div className="top">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={DARK_LOGO} alt={SCHOOL} />
-          <div className="sname">{SCHOOL}</div>
+          <div className="dom">{DOMAIN}</div>
         </div>
         <div className="kick">അറിയിപ്പ് · NOTICE</div>
         {title ? <div className="ntitle">{title}</div> : null}
         {date ? <div className="ndate">{date}</div> : null}
         <NoticeBody body={body} />
-        {footer ? <div className="foot">{footer}</div> : null}
+        <div className="foot">
+          {footer ? <div className="sig">{footer}</div> : null}
+        </div>
       </div>
     </>
   );
@@ -265,7 +273,7 @@ function Design4({ title, date, body, footer }: DesignProps) {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={DARK_LOGO} alt={SCHOOL} />
         <div className="meta">
-          <div className="sname">{SCHOOL}</div>
+          <div className="dom">{DOMAIN}</div>
           <div className="addr">{TAGLINE}</div>
         </div>
       </div>
@@ -275,12 +283,9 @@ function Design4({ title, date, body, footer }: DesignProps) {
       {date ? <div className="ndate">തീയതി / Date: {date}</div> : null}
       {title ? <div className="ntitle">{title}</div> : null}
       <NoticeBody body={body} />
-      {footer ? (
-        <div className="foot">
-          {footer}
-          <div className="sub">{SCHOOL}</div>
-        </div>
-      ) : null}
+      <div className="foot">
+        {footer ? <span className="sig">{footer}</span> : null}
+      </div>
     </div>
   );
 }
@@ -320,7 +325,7 @@ const NOTICE_CSS = `
   background:linear-gradient(135deg,var(--maroon),var(--maroon-deep));
   display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; }
 .nd1 .head img{ height:76px; }
-.nd1 .head .sname{ font-family:var(--font-cinzel),'Cinzel',serif; font-size:17px; letter-spacing:.28em; color:var(--gold-lite); text-transform:uppercase; }
+.nd1 .head .dom{ font-family:var(--font-inter),'Inter',sans-serif; font-size:16px; letter-spacing:.14em; color:var(--gold); font-weight:600; }
 .nd1 .head::after{ content:''; position:absolute; left:0; right:0; bottom:0; height:5px;
   background:linear-gradient(90deg,var(--gold-deep),var(--gold-lite),var(--gold-deep)); }
 .nd1 .body{ position:absolute; top:200px; left:0; right:0; bottom:58px; padding:40px 60px; display:flex; flex-direction:column; }
@@ -329,7 +334,7 @@ const NOTICE_CSS = `
 .nd1 .ndate{ margin:18px auto 0; background:var(--maroon); color:var(--gold-lite); font-size:18px; padding:9px 24px; border-radius:999px; font-weight:600; }
 .nd1 .nbody{ margin-top:30px; }
 .nd1 .foot{ position:absolute; left:0; right:0; bottom:0; height:58px; background:var(--maroon-deep); color:var(--gold-lite);
-  display:flex; align-items:center; justify-content:center; font-size:16px; letter-spacing:.03em; }
+  display:flex; align-items:center; justify-content:center; padding:0 44px; font-size:16px; letter-spacing:.03em; }
 
 /* ===== Design 2 — Ivory Elegant ===== */
 .nd2{ background:var(--cream); }
@@ -345,14 +350,15 @@ const NOTICE_CSS = `
 .nd2 .ndate{ text-align:center; font-size:18px; color:var(--maroon); font-weight:600; }
 .nd2 .nbody{ margin-top:26px; }
 .nd2 .foot{ text-align:center; font-size:16px; color:var(--maroon); font-weight:600; padding-top:12px; }
+.nd2 .foot .web{ margin-top:6px; color:var(--gold-deep); font-weight:700; letter-spacing:.08em; font-size:15px; }
 
 /* ===== Design 3 — Modern Accent ===== */
 .nd3{ background:#fff; }
 .nd3 .sidebar{ position:absolute; left:0; top:0; bottom:0; width:22px; background:linear-gradient(180deg,var(--maroon),var(--maroon-deep)); }
 .nd3 .inner{ position:absolute; left:22px; right:0; top:0; bottom:0; padding:54px 56px; display:flex; flex-direction:column; }
-.nd3 .top{ display:flex; align-items:center; gap:18px; }
+.nd3 .top{ display:flex; align-items:center; justify-content:space-between; gap:18px; }
 .nd3 .top img{ height:58px; }
-.nd3 .top .sname{ font-family:var(--font-cinzel),'Cinzel',serif; font-size:15px; letter-spacing:.16em; color:var(--maroon); text-transform:uppercase; font-weight:700; }
+.nd3 .top .dom{ font-family:var(--font-inter),'Inter',sans-serif; font-size:15px; letter-spacing:.06em; color:var(--gold-deep); font-weight:700; }
 .nd3 .kick{ margin-top:34px; font-size:14px; letter-spacing:.32em; color:var(--gold-deep); text-transform:uppercase; font-weight:700; }
 .nd3 .ntitle{ margin-top:10px; font-weight:800; font-size:44px; line-height:1.14; color:var(--maroon); }
 .nd3 .ndate{ margin-top:18px; align-self:flex-start; background:var(--maroon); color:#fff; font-size:17px; padding:8px 18px; border-radius:8px; font-weight:600; }
@@ -365,15 +371,14 @@ const NOTICE_CSS = `
 .nd4 .lhead{ display:flex; align-items:center; gap:20px; padding-bottom:18px; border-bottom:3px solid var(--maroon); }
 .nd4 .lhead img{ height:72px; }
 .nd4 .lhead .meta{ flex:1; }
-.nd4 .lhead .sname{ font-family:var(--font-cinzel),'Cinzel',serif; font-size:24px; color:var(--maroon); font-weight:800; letter-spacing:.03em; }
+.nd4 .lhead .dom{ font-family:var(--font-inter),'Inter',sans-serif; font-size:22px; color:var(--gold-deep); font-weight:800; letter-spacing:.04em; }
 .nd4 .lhead .addr{ margin-top:5px; font-size:13px; color:var(--ink); opacity:.65; letter-spacing:.04em; }
 .nd4 .noticehd{ text-align:center; margin-top:30px; font-family:var(--font-noto-serif-ml),'Noto Serif Malayalam',serif; font-size:24px; font-weight:700; color:var(--maroon); letter-spacing:.08em; }
 .nd4 .noticehd span{ border-bottom:2px solid var(--gold-deep); padding-bottom:5px; }
 .nd4 .ndate{ margin-top:24px; text-align:right; font-size:16px; color:var(--ink); font-weight:600; }
 .nd4 .ntitle{ margin-top:8px; text-align:center; font-family:var(--font-noto-serif-ml),'Noto Serif Malayalam',serif; font-size:30px; font-weight:700; color:var(--maroon); line-height:1.2; }
 .nd4 .nbody{ margin-top:22px; }
-.nd4 .foot{ text-align:right; font-size:17px; color:var(--maroon); font-weight:700; }
-.nd4 .foot .sub{ font-weight:400; opacity:.65; font-size:13px; margin-top:3px; }
+.nd4 .foot{ display:flex; align-items:baseline; justify-content:flex-end; font-size:17px; color:var(--maroon); font-weight:700; }
 `;
 
 /* ------------------------------ Component ------------------------------ */
