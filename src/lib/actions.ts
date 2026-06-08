@@ -252,6 +252,40 @@ export async function deleteGalleryAction(formData: FormData) {
   redirect("/admin/gallery");
 }
 
+/**
+ * Create a gallery record from an already-uploaded image URL (e.g. a framed
+ * program photo from the Photo Frame tool that was uploaded via /api/upload).
+ * Takes a small payload so it stays well under the Server Action body limit.
+ * Returns a result object instead of redirecting so it can be called from a
+ * client component.
+ */
+export async function addImageToGalleryAction(
+  imageUrl: string,
+  title = "",
+  category = "Events",
+): Promise<{ ok: boolean; error?: string }> {
+  const session = await getSession();
+  if (!session) return { ok: false, error: "Unauthorized" };
+  if (!imageUrl) return { ok: false, error: "No image provided" };
+
+  try {
+    await prisma.galleryImage.create({
+      data: {
+        title: title.trim(),
+        category: category.trim() || "Events",
+        order: 0,
+        published: true,
+        imageUrl,
+      },
+    });
+    revalidateAll();
+    return { ok: true };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Could not add to gallery";
+    return { ok: false, error: msg };
+  }
+}
+
 /* --------------------------- Programs --------------------------- */
 
 export async function saveProgramAction(formData: FormData) {

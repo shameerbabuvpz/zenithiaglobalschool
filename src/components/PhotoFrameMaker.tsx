@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { toPng } from "html-to-image";
+import { toBlob, toPng } from "html-to-image";
+import { addImageToGalleryAction } from "@/lib/actions";
 
 /**
  * Program "Photo Frame" maker (admin only).
@@ -394,6 +395,8 @@ export default function PhotoFrameMaker() {
   const [sub, setSub] = useState("");
   const [photo, setPhoto] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [savedMsg, setSavedMsg] = useState<string | null>(null);
 
   const frameRef = useRef<HTMLDivElement>(null);
   const scalerRef = useRef<HTMLDivElement>(null);
@@ -444,6 +447,39 @@ export default function PhotoFrameMaker() {
       alert("Sorry, the frame could not be generated. Please try again.");
     } finally {
       setBusy(false);
+    }
+  }, [name, frame, orient]);
+
+  const onAddToGallery = useCallback(async () => {
+    const node = frameRef.current;
+    if (!node) return;
+    setSaving(true);
+    setSavedMsg(null);
+    try {
+      if (document.fonts?.ready) await document.fonts.ready;
+      const blob = await toBlob(node, {
+        pixelRatio: 3,
+        cacheBust: true,
+        backgroundColor: FRAME_BG[frame],
+      });
+      if (!blob) throw new Error("Could not render the frame.");
+      const fileName = `zenithia-frame-f${frame}-${orient}-${slugify(name)}.png`;
+      const fd = new FormData();
+      fd.append("file", blob, fileName);
+      const up = await fetch("/api/upload", { method: "POST", body: fd });
+      if (!up.ok) {
+        const e = await up.json().catch(() => null);
+        throw new Error(e?.error || "Upload failed.");
+      }
+      const { url } = await up.json();
+      const res = await addImageToGalleryAction(url, name.trim(), "Events");
+      if (!res.ok) throw new Error(res.error || "Could not add to gallery.");
+      setSavedMsg("Added to the gallery. Manage it from the Gallery page.");
+    } catch (err) {
+      console.error(err);
+      setSavedMsg(err instanceof Error ? err.message : "Could not add to gallery.");
+    } finally {
+      setSaving(false);
     }
   }, [name, frame, orient]);
 
@@ -551,6 +587,22 @@ export default function PhotoFrameMaker() {
               The photo is auto-fitted into the frame for the selected orientation.
             </p>
           </label>
+
+          <button
+            type="button"
+            onClick={onAddToGallery}
+            disabled={saving || busy}
+            className="w-full rounded-full border border-brand px-5 py-3 text-sm font-semibold text-brand transition hover:bg-brand/5 disabled:opacity-60"
+          >
+            {saving ? "Adding to Gallery…" : "Add to Gallery"}
+          </button>
+          {savedMsg ? (
+            <p className="text-center text-xs text-ink/60">{savedMsg}</p>
+          ) : (
+            <p className="text-center text-xs text-ink/45">
+              “Add to Gallery” generates the image and publishes it to the public gallery automatically.
+            </p>
+          )}
 
           <button
             type="button"

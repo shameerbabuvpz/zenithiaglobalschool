@@ -13,6 +13,7 @@ const links = [
   { href: "/admin/messages", label: "Messages", icon: "✉" },
   { href: "/admin/poster", label: "Poster Maker", icon: "🏅" },
   { href: "/admin/photo-frame", label: "Photo Frame", icon: "🖼️" },
+  { href: "/admin/notice-board", label: "Notice Board", icon: "📢" },
 ];
 
 export default function AdminSidebar() {
