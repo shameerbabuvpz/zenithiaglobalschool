@@ -37,7 +37,17 @@ export default function SignatoryPicker({
     [staff, category],
   );
 
-  if (loaded && items.length === 0) return null;
+  if (loaded && items.length === 0) {
+    return (
+      <div className="rounded-lg border border-dashed border-brand/30 bg-brand/5 px-3 py-2 text-xs text-ink/55">
+        No signatories saved.{" "}
+        <a href="/admin/signatories" className="font-semibold text-brand hover:underline">
+          Add them
+        </a>{" "}
+        to reuse here.
+      </div>
+    );
+  }
 
   return (
     <select
