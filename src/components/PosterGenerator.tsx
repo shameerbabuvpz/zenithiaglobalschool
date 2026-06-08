@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toPng } from "html-to-image";
+import StudentPicker from "@/components/admin/StudentPicker";
+import type { StudentDTO } from "@/lib/actions";
 
 /**
  * "Student of the Month" poster maker (admin only).
@@ -491,6 +493,12 @@ export default function PosterGenerator() {
     reader.readAsDataURL(file);
   }, []);
 
+  const fillFromStudent = useCallback((s: StudentDTO) => {
+    setName(s.name);
+    setKlass(s.klass ? `Class ${s.klass}` : "");
+    setPhoto(s.photoUrl);
+  }, []);
+
   const onDownload = useCallback(async () => {
     const node = posterRef.current;
     if (!node) return;
@@ -554,6 +562,7 @@ export default function PosterGenerator() {
         </div>
 
         <div className="mt-5 space-y-4">
+          <StudentPicker onPick={fillFromStudent} />
           <label className="block">
             <span className="mb-1 block text-sm font-medium text-ink/70">Month &amp; Year</span>
             <input

@@ -138,3 +138,42 @@ model ReportSettings {
   updatedAt    DateTime @updatedAt
 }
 
+// Central student directory. Stored once here and reused (via a class +
+// student dropdown) by every maker tool — ID cards, certificates, progress
+// reports, letters and posters. Photos are uploaded through /api/upload and
+// only the resulting /media link is stored.
+model Student {
+  id          String   @id @default(cuid())
+  admissionNo String   @default("")
+  name        String
+  klass       String   @default("") // "1" .. "5" (or "LKG", "6 B" …)
+  gender      String   @default("") // "male" | "female"
+  dob         String   @default("") // free-text date, e.g. 07-08-2014
+  fatherName  String   @default("")
+  motherName  String   @default("")
+  mobile      String   @default("")
+  bloodGroup  String   @default("")
+  address     String   @default("")
+  photoUrl    String? // /media link to the uploaded photo
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([klass])
+}
+
+// Central staff / signatory directory. Name + designation + uploaded
+// signature image (served from /media), grouped by a category. Reused
+// everywhere a signature is printed, instead of re-typing them per tool.
+model Staff {
+  id           String   @id @default(cuid())
+  name         String
+  designation  String   @default("")
+  category     String   @default("staff") // "teacher" | "principal" | "admin" | "manager" | "staff"
+  signatureUrl String? // /media link to the uploaded signature
+  order        Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([category])
+}

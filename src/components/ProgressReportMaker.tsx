@@ -5,10 +5,12 @@ import { flushSync } from "react-dom";
 import { toPng } from "html-to-image";
 import * as XLSX from "xlsx";
 import {
-  listReportStaffAction,
-  saveReportStaffAction,
-  deleteReportStaffAction,
+  listStaffAction,
+  saveStaffAction,
+  deleteStaffAction,
+  type StudentDTO,
 } from "@/lib/actions";
+import StudentPicker from "@/components/admin/StudentPicker";
 
 /**
  * Progress Report card maker (admin only).
@@ -493,9 +495,13 @@ export default function ProgressReportMaker() {
 
   const refreshStaff = useCallback(async () => {
     try {
-      const { teachers, principals } = await listReportStaffAction();
-      setTeacherPresets(teachers);
-      setPrincipalPresets(principals);
+      const all = await listStaffAction();
+      setTeacherPresets(
+        all.filter((s) => s.category === "teacher").map((s) => ({ id: s.id, name: s.name, signature: s.signature })),
+      );
+      setPrincipalPresets(
+        all.filter((s) => s.category === "principal").map((s) => ({ id: s.id, name: s.name, signature: s.signature })),
+      );
     } catch {
       /* ignore */
     }
@@ -549,6 +555,13 @@ export default function ProgressReportMaker() {
     e.target.value = "";
   };
 
+  const fillFromStudent = (s: StudentDTO) => {
+    setStudentName(s.name);
+    setKlass(s.klass ? `Class ${s.klass}` : "");
+    setRoll(s.admissionNo);
+    setPhoto(s.photoUrl);
+  };
+
   /* Teacher / principal presets (saved with their signature) */
   const applyStaff = (role: "teacher" | "principal", id: string) => {
     if (role === "teacher") setSelectedTeacherId(id);
@@ -575,7 +588,12 @@ export default function ProgressReportMaker() {
     const sig = role === "teacher" ? teacherSig : principalSig;
     try {
       const url = await ensureSignatureUrl(sig);
-      const res = await saveReportStaffAction(role, name, url);
+      const res = await saveStaffAction({
+        name,
+        designation: role === "teacher" ? "Class Teacher" : "Principal",
+        category: role,
+        signatureUrl: url,
+      });
       if (!res.ok) {
         alert(res.error || "Could not save.");
         return;
@@ -597,7 +615,7 @@ export default function ProgressReportMaker() {
   const deleteStaff = async (role: "teacher" | "principal") => {
     const id = role === "teacher" ? selectedTeacherId : selectedPrincipalId;
     if (!id) return;
-    const res = await deleteReportStaffAction(id);
+    const res = await deleteStaffAction(id);
     if (!res.ok) {
       alert(res.error || "Could not delete.");
       return;
@@ -838,6 +856,7 @@ export default function ProgressReportMaker() {
         <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm">
           <h2 className="font-display text-xl text-brand">Student</h2>
           <div className="mt-4 space-y-4">
+            <StudentPicker onPick={fillFromStudent} />
             <label className="block">
               <span className="mb-1 block text-sm font-medium text-ink/70">Student name</span>
               <input type="text" value={studentName} onChange={(e) => setStudentName(e.target.value)} placeholder="e.g. Aaron Thomas" className={inputCls} />

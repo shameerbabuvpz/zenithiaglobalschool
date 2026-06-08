@@ -4,6 +4,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { toPng } from "html-to-image";
 import * as XLSX from "xlsx";
+import StudentPicker from "@/components/admin/StudentPicker";
+import SignatoryPicker from "@/components/admin/SignatoryPicker";
+import type { StudentDTO, StaffDTO } from "@/lib/actions";
 
 /**
  * ID card maker / downloader (admin only).
@@ -252,6 +255,24 @@ export default function IdCardMaker({
     if (f) setSignImg(await fileToDataUrl(f));
   }, []);
 
+  const fillFromStudent = useCallback((s: StudentDTO) => {
+    setCardType("student");
+    setName(s.name);
+    setRole(s.klass ? `Class ${s.klass}` : "");
+    setIdNo(s.admissionNo);
+    setDob(s.dob);
+    setBlood(s.bloodGroup);
+    setGuardian(s.fatherName || s.motherName);
+    setContact(s.mobile);
+    setAddress2(s.address);
+    setPhoto(s.photoUrl);
+  }, []);
+
+  const fillFromSignatory = useCallback((s: StaffDTO) => {
+    setSignName(s.designation || s.name);
+    setSignImg(s.signature);
+  }, []);
+
   /* ----------------------------- Capture ----------------------------- */
   const capturePng = useCallback(async () => {
     const node = cardRef.current;
@@ -470,6 +491,11 @@ export default function IdCardMaker({
         {/* Holder */}
         <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm">
           <h2 className="font-display text-xl text-brand">Card holder</h2>
+          {cardType === "student" && (
+            <div className="mt-4">
+              <StudentPicker onPick={fillFromStudent} />
+            </div>
+          )}
           <label className="mt-4 block">
             <span className="mb-1 block text-sm font-medium text-ink/70">Full name</span>
             <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" className={inputCls} />
@@ -537,6 +563,9 @@ export default function IdCardMaker({
         {/* Signature */}
         <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm">
           <h2 className="font-display text-xl text-brand">Signatory</h2>
+          <div className="mt-4">
+            <SignatoryPicker onPick={fillFromSignatory} />
+          </div>
           <label className="mt-4 block">
             <span className="mb-1 block text-sm font-medium text-ink/70">Name / role under the line</span>
             <input type="text" value={signName} onChange={(e) => setSignName(e.target.value)} placeholder="Principal" className={inputCls} />

@@ -23,6 +23,13 @@ const groups: NavGroup[] = [
     ],
   },
   {
+    title: "Records",
+    items: [
+      { href: "/admin/students", label: "Students", icon: "👥" },
+      { href: "/admin/signatories", label: "Signatories", icon: "✍️" },
+    ],
+  },
+  {
     title: "Design Tools",
     items: [
       { href: "/admin/poster", label: "Poster Maker", icon: "🏅" },

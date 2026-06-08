@@ -4,6 +4,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { toPng } from "html-to-image";
 import * as XLSX from "xlsx";
+import StudentPicker from "@/components/admin/StudentPicker";
+import SignatoryPicker from "@/components/admin/SignatoryPicker";
+import type { StudentDTO, StaffDTO } from "@/lib/actions";
 
 /**
  * Certificate maker / downloader (admin only).
@@ -429,6 +432,23 @@ export default function CertificateMaker() {
     if (f) setSig2Img(await fileToDataUrl(f));
   }, []);
 
+  const fillFromStudent = useCallback((s: StudentDTO) => {
+    setStudentName(s.name);
+    setKlass(s.klass ? `Class ${s.klass}` : "");
+  }, []);
+
+  const fillFromSig1 = useCallback((s: StaffDTO) => {
+    setSig1Name(s.name);
+    setSig1Role(s.designation || "Coordinator");
+    setSig1Img(s.signature);
+  }, []);
+
+  const fillFromSig2 = useCallback((s: StaffDTO) => {
+    setSig2Name(s.name);
+    setSig2Role(s.designation || "Principal");
+    setSig2Img(s.signature);
+  }, []);
+
   /* ----------------------------- Capture ----------------------------- */
   const capturePng = useCallback(async () => {
     const node = certRef.current;
@@ -708,6 +728,9 @@ export default function CertificateMaker() {
         {/* Recipient */}
         <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm">
           <h2 className="font-display text-xl text-brand">Recipient</h2>
+          <div className="mt-4">
+            <StudentPicker onPick={fillFromStudent} />
+          </div>
           <div className="mt-4 grid grid-cols-[1fr_auto] gap-3">
             <label className="block">
               <span className="mb-1 block text-sm font-medium text-ink/70">Student name</span>
@@ -768,11 +791,14 @@ export default function CertificateMaker() {
           <p className="mt-1 text-xs text-ink/45">Two signatories appear at the foot of the certificate.</p>
 
           {([
-            { n: sig1Name, sn: setSig1Name, r: sig1Role, sr: setSig1Role, img: sig1Img, simg: setSig1Img, on: onSig1, label: "Left signatory" },
-            { n: sig2Name, sn: setSig2Name, r: sig2Role, sr: setSig2Role, img: sig2Img, simg: setSig2Img, on: onSig2, label: "Right signatory" },
+            { n: sig1Name, sn: setSig1Name, r: sig1Role, sr: setSig1Role, img: sig1Img, simg: setSig1Img, on: onSig1, pick: fillFromSig1, label: "Left signatory" },
+            { n: sig2Name, sn: setSig2Name, r: sig2Role, sr: setSig2Role, img: sig2Img, simg: setSig2Img, on: onSig2, pick: fillFromSig2, label: "Right signatory" },
           ] as const).map((s, i) => (
             <div key={i} className="mt-4 rounded-xl border border-black/10 p-3">
               <span className="block text-xs font-semibold uppercase tracking-wide text-ink/45">{s.label}</span>
+              <div className="mt-2">
+                <SignatoryPicker onPick={s.pick} />
+              </div>
               <div className="mt-2 grid grid-cols-2 gap-2">
                 <input type="text" value={s.n} onChange={(e) => s.sn(e.target.value)} placeholder="Name" className={inputCls} />
                 <input type="text" value={s.r} onChange={(e) => s.sr(e.target.value)} placeholder="Designation" className={inputCls} />

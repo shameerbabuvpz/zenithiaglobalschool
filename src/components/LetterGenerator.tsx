@@ -2,6 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toPng } from "html-to-image";
+import StudentPicker from "@/components/admin/StudentPicker";
+import SignatoryPicker from "@/components/admin/SignatoryPicker";
+import type { StudentDTO, StaffDTO } from "@/lib/actions";
 
 /**
  * Letter / certificate generator (admin only).
@@ -340,6 +343,23 @@ export default function LetterGenerator({
     if (f) setSignImg(await fileToDataUrl(f));
   }, []);
 
+  const fillFromStudent = useCallback((s: StudentDTO) => {
+    setName(s.name);
+    if (s.gender === "male" || s.gender === "female") setGender(s.gender);
+    setGuardian(s.fatherName);
+    setMotherName(s.motherName);
+    setKlass(s.klass);
+    setClassStudying(s.klass);
+    setAdmissionNo(s.admissionNo);
+    setDob(s.dob);
+  }, []);
+
+  const fillFromSignatory = useCallback((s: StaffDTO) => {
+    setSignName(s.name);
+    setSignRole(s.designation || "Principal");
+    setSignImg(s.signature);
+  }, []);
+
   const capturePng = useCallback(async () => {
     const node = docRef.current;
     if (!node) throw new Error("Nothing to render.");
@@ -474,6 +494,9 @@ export default function LetterGenerator({
         ) : (
           <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm">
             <h2 className="font-display text-xl text-brand">Student details</h2>
+            <div className="mt-4">
+              <StudentPicker onPick={fillFromStudent} />
+            </div>
             <div className="mt-4 grid grid-cols-[1fr_auto] gap-3">
               <label className="block">
                 <span className="mb-1 block text-sm font-medium text-ink/70">Student name</span>
@@ -584,6 +607,9 @@ export default function LetterGenerator({
         {/* Signatory */}
         <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm">
           <h2 className="font-display text-xl text-brand">Signatory & place</h2>
+          <div className="mt-4">
+            <SignatoryPicker onPick={fillFromSignatory} />
+          </div>
           <div className="mt-4 grid grid-cols-2 gap-3">
             <label className="block">
               <span className="mb-1 block text-sm font-medium text-ink/70">Name <span className="text-ink/40">(optional)</span></span>

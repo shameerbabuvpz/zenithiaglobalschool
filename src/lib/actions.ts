@@ -471,3 +471,285 @@ export async function deleteMessageAction(formData: FormData) {
   revalidatePath("/admin/messages");
   redirect("/admin/messages");
 }
+
+/* --------------------------- Students --------------------------- */
+
+export type StudentDTO = {
+  id: string;
+  admissionNo: string;
+  name: string;
+  klass: string;
+  gender: string;
+  dob: string;
+  fatherName: string;
+  motherName: string;
+  mobile: string;
+  bloodGroup: string;
+  address: string;
+  photoUrl: string | null;
+};
+
+export type StudentInput = Omit<StudentDTO, "id"> & { id?: string };
+
+function toStudentDTO(s: {
+  id: string;
+  admissionNo: string;
+  name: string;
+  klass: string;
+  gender: string;
+  dob: string;
+  fatherName: string;
+  motherName: string;
+  mobile: string;
+  bloodGroup: string;
+  address: string;
+  photoUrl: string | null;
+}): StudentDTO {
+  return {
+    id: s.id,
+    admissionNo: s.admissionNo,
+    name: s.name,
+    klass: s.klass,
+    gender: s.gender,
+    dob: s.dob,
+    fatherName: s.fatherName,
+    motherName: s.motherName,
+    mobile: s.mobile,
+    bloodGroup: s.bloodGroup,
+    address: s.address,
+    photoUrl: s.photoUrl,
+  };
+}
+
+function cleanStudent(s: StudentInput) {
+  const norm = (v: string) => (v ?? "").toString().trim();
+  const g = norm(s.gender).toLowerCase();
+  return {
+    admissionNo: norm(s.admissionNo),
+    name: norm(s.name),
+    klass: norm(s.klass),
+    gender: g === "female" || g === "f" ? "female" : g === "male" || g === "m" ? "male" : "",
+    dob: norm(s.dob),
+    fatherName: norm(s.fatherName),
+    motherName: norm(s.motherName),
+    mobile: norm(s.mobile),
+    bloodGroup: norm(s.bloodGroup),
+    address: norm(s.address),
+    photoUrl: s.photoUrl ? norm(s.photoUrl) : null,
+  };
+}
+
+/** List students, optionally filtered by class, ordered by class then name. */
+export async function listStudentsAction(klass?: string): Promise<StudentDTO[]> {
+  const session = await getSession();
+  if (!session) return [];
+  const where = klass && klass.trim() ? { klass: klass.trim() } : undefined;
+  const rows = await prisma.student.findMany({
+    where,
+    orderBy: [{ klass: "asc" }, { name: "asc" }],
+  });
+  return rows.map(toStudentDTO);
+}
+
+/** Distinct class list (for the class dropdowns), naturally sorted. */
+export async function listClassesAction(): Promise<string[]> {
+  const session = await getSession();
+  if (!session) return [];
+  const rows = await prisma.student.findMany({
+    select: { klass: true },
+    distinct: ["klass"],
+  });
+  return rows
+    .map((r) => r.klass)
+    .filter((k) => k.trim())
+    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }));
+}
+
+/** Create or update a single student. */
+export async function saveStudentAction(
+  input: StudentInput,
+): Promise<{ ok: boolean; id?: string; error?: string }> {
+  const session = await getSession();
+  if (!session) return { ok: false, error: "Unauthorized" };
+  const data = cleanStudent(input);
+  if (!data.name) return { ok: false, error: "Enter a name first" };
+  try {
+    if (input.id) {
+      const updated = await prisma.student.update({ where: { id: input.id }, data });
+      revalidatePath("/admin/students");
+      return { ok: true, id: updated.id };
+    }
+    const created = await prisma.student.create({ data });
+    revalidatePath("/admin/students");
+    return { ok: true, id: created.id };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Could not save student";
+    return { ok: false, error: msg };
+  }
+}
+
+/**
+ * Bulk insert/update students from an uploaded sheet. Rows that match an
+ * existing student by admission number (case-insensitive, when present) are
+ * updated; the rest are created. Photos are not part of bulk upload.
+ */
+export async function bulkUpsertStudentsAction(
+  rows: StudentInput[],
+): Promise<{ ok: boolean; created: number; updated: number; error?: string }> {
+  const session = await getSession();
+  if (!session) return { ok: false, created: 0, updated: 0, error: "Unauthorized" };
+  let created = 0;
+  let updated = 0;
+  try {
+    for (const raw of rows) {
+      const data = cleanStudent(raw);
+      if (!data.name) continue;
+      let existing = null as { id: string } | null;
+      if (data.admissionNo) {
+        existing = await prisma.student.findFirst({
+          where: { admissionNo: { equals: data.admissionNo, mode: "insensitive" } },
+          select: { id: true },
+        });
+      }
+      if (existing) {
+        await prisma.student.update({ where: { id: existing.id }, data });
+        updated++;
+      } else {
+        await prisma.student.create({ data });
+        created++;
+      }
+    }
+    revalidatePath("/admin/students");
+    return { ok: true, created, updated };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Could not import students";
+    return { ok: false, created, updated, error: msg };
+  }
+}
+
+/** Delete a student and its uploaded photo. */
+export async function deleteStudentAction(
+  id: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const session = await getSession();
+  if (!session) return { ok: false, error: "Unauthorized" };
+  if (!id) return { ok: false, error: "No id provided" };
+  try {
+    const existing = await prisma.student.findUnique({ where: { id } });
+    if (existing) {
+      if (existing.photoUrl) await deleteUploadedImage(existing.photoUrl);
+      await prisma.student.delete({ where: { id } });
+    }
+    revalidatePath("/admin/students");
+    return { ok: true };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Could not delete student";
+    return { ok: false, error: msg };
+  }
+}
+
+/* ----------------------- Staff / signatories ----------------------- */
+
+export type StaffDTO = {
+  id: string;
+  name: string;
+  designation: string;
+  category: string;
+  signature: string | null;
+};
+
+const STAFF_CATEGORIES = [
+  "teacher",
+  "principal",
+  "admin",
+  "manager",
+  "staff",
+] as const;
+
+function toStaffDTOFull(s: {
+  id: string;
+  name: string;
+  designation: string;
+  category: string;
+  signatureUrl: string | null;
+}): StaffDTO {
+  return {
+    id: s.id,
+    name: s.name,
+    designation: s.designation,
+    category: s.category,
+    signature: s.signatureUrl,
+  };
+}
+
+/** List all saved staff / signatories, ordered by category then name. */
+export async function listStaffAction(): Promise<StaffDTO[]> {
+  const session = await getSession();
+  if (!session) return [];
+  const rows = await prisma.staff.findMany({
+    orderBy: [{ category: "asc" }, { order: "asc" }, { name: "asc" }],
+  });
+  return rows.map(toStaffDTOFull);
+}
+
+/** Create or update a staff / signatory entry (name + designation + signature). */
+export async function saveStaffAction(input: {
+  id?: string;
+  name: string;
+  designation: string;
+  category: string;
+  signatureUrl: string | null;
+}): Promise<{ ok: boolean; id?: string; error?: string }> {
+  const session = await getSession();
+  if (!session) return { ok: false, error: "Unauthorized" };
+  const name = (input.name ?? "").trim();
+  if (!name) return { ok: false, error: "Enter a name first" };
+  const designation = (input.designation ?? "").trim();
+  const category = (STAFF_CATEGORIES as readonly string[]).includes(input.category)
+    ? input.category
+    : "staff";
+  const signatureUrl = input.signatureUrl ? input.signatureUrl.trim() : null;
+  try {
+    if (input.id) {
+      const prev = await prisma.staff.findUnique({ where: { id: input.id } });
+      if (prev?.signatureUrl && prev.signatureUrl !== signatureUrl) {
+        await deleteUploadedImage(prev.signatureUrl);
+      }
+      const updated = await prisma.staff.update({
+        where: { id: input.id },
+        data: { name, designation, category, signatureUrl },
+      });
+      revalidateAll();
+      return { ok: true, id: updated.id };
+    }
+    const created = await prisma.staff.create({
+      data: { name, designation, category, signatureUrl },
+    });
+    revalidateAll();
+    return { ok: true, id: created.id };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Could not save";
+    return { ok: false, error: msg };
+  }
+}
+
+/** Delete a staff / signatory entry and its signature image. */
+export async function deleteStaffAction(
+  id: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const session = await getSession();
+  if (!session) return { ok: false, error: "Unauthorized" };
+  if (!id) return { ok: false, error: "No id provided" };
+  try {
+    const existing = await prisma.staff.findUnique({ where: { id } });
+    if (existing) {
+      if (existing.signatureUrl) await deleteUploadedImage(existing.signatureUrl);
+      await prisma.staff.delete({ where: { id } });
+    }
+    revalidateAll();
+    return { ok: true };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Could not delete";
+    return { ok: false, error: msg };
+  }
+}
