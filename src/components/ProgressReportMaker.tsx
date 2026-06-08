@@ -81,6 +81,15 @@ const DEFAULT_SUBJECTS = [
   "Hifd",
 ];
 
+type StaffPreset = { id: string; name: string; signature: string | null };
+
+const TEACHER_KEY = "zenithia-report-teachers-v1";
+const PRINCIPAL_KEY = "zenithia-report-principals-v1";
+
+const CLASS_OPTIONS = [
+  "LKG", "UKG", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12",
+];
+
 /* ------------------------------ Data types ----------------------------- */
 
 type Subject = { name: string; mark: string };
@@ -96,8 +105,9 @@ type ReportData = {
   photo: string | null;
   subjects: Subject[];
   teacher: string;
+  teacherSig: string | null;
   principal: string;
-  signature: string | null;
+  principalSig: string | null;
   date: string;
 };
 
@@ -132,9 +142,9 @@ function overallGrade(subjects: Subject[], maxMark: number): Grade | null {
 
 /* ------------------------------ Card view ------------------------------ */
 
-function ExamLabel({ exam, ml }: { exam: ExamId; ml: boolean }) {
+function ExamLabel({ exam }: { exam: ExamId }) {
   const e = EXAM_TYPES.find((x) => x.id === exam) ?? EXAM_TYPES[0];
-  return <>{ml ? e.ml : e.label}</>;
+  return <>{e.label}</>;
 }
 
 function ReportCard({ data }: { data: ReportData }) {
@@ -152,7 +162,7 @@ function ReportCard({ data }: { data: ReportData }) {
         <img src={logo} alt="Zenithia Global School" />
         <div className="rtitle">PROGRESS REPORT CARD</div>
         <div className="rsub">
-          <ExamLabel exam={data.exam} ml /> &nbsp;·&nbsp; <ExamLabel exam={data.exam} ml={false} />
+          <ExamLabel exam={data.exam} />
           {data.year ? ` · ${data.year}` : ""}
         </div>
       </div>
@@ -170,16 +180,16 @@ function ReportCard({ data }: { data: ReportData }) {
           </div>
           <div className="sinfo">
             <div className="row">
-              <span className="lbl">Name / പേര്</span>
+              <span className="lbl">Name</span>
               <span className="val name">{data.studentName || "—"}</span>
             </div>
             <div className="grid2">
               <div className="row">
-                <span className="lbl">Class / ക്ലാസ്</span>
+                <span className="lbl">Class</span>
                 <span className="val">{data.klass || "—"}</span>
               </div>
               <div className="row">
-                <span className="lbl">Roll No / റോൾ</span>
+                <span className="lbl">Roll No</span>
                 <span className="val">{data.roll || "—"}</span>
               </div>
             </div>
@@ -191,7 +201,7 @@ function ReportCard({ data }: { data: ReportData }) {
           <thead>
             <tr>
               <th className="cno">#</th>
-              <th className="csub">Subject / വിഷയം</th>
+              <th className="csub">Subject</th>
               <th className="cgr">Grade</th>
               <th className="crm">Remark</th>
             </tr>
@@ -211,7 +221,7 @@ function ReportCard({ data }: { data: ReportData }) {
             ) : (
               <tr>
                 <td className="cno">1</td>
-                <td className="csub ghost">വിഷയം</td>
+                <td className="csub ghost">Subject</td>
                 <td className="cgr">
                   <span className="gbadge t5">A+</span>
                 </td>
@@ -223,7 +233,7 @@ function ReportCard({ data }: { data: ReportData }) {
 
         {overall ? (
           <div className="overall">
-            <span className="olbl">Overall Grade / മൊത്തം ഗ്രേഡ്</span>
+            <span className="olbl">Overall Grade</span>
             <span className={`obadge t${overall.tier}`}>{overall.grade}</span>
             <span className="orem">{overall.remark}</span>
           </div>
@@ -233,22 +243,27 @@ function ReportCard({ data }: { data: ReportData }) {
         <div className="signs">
           <div className="sign">
             <div className="sline">
-              {data.teacher ? <span className="hand">{data.teacher}</span> : null}
+              {data.teacherSig ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={data.teacherSig} alt="Signature" className="simg" />
+              ) : data.teacher ? (
+                <span className="hand">{data.teacher}</span>
+              ) : null}
             </div>
             <div className="srule" />
-            <div className="slabel">Class Teacher / ക്ലാസ് ടീച്ചർ</div>
+            <div className="slabel">Class Teacher</div>
           </div>
           <div className="sign">
             <div className="sline">
-              {data.signature ? (
+              {data.principalSig ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={data.signature} alt="Signature" className="simg" />
+                <img src={data.principalSig} alt="Signature" className="simg" />
               ) : data.principal ? (
                 <span className="hand">{data.principal}</span>
               ) : null}
             </div>
             <div className="srule" />
-            <div className="slabel">Principal / പ്രിൻസിപ്പൽ</div>
+            <div className="slabel">Principal</div>
           </div>
         </div>
       </div>
@@ -407,9 +422,15 @@ export default function ProgressReportMaker() {
   );
 
   const [teacher, setTeacher] = useState("");
+  const [teacherSig, setTeacherSig] = useState<string | null>(null);
   const [principal, setPrincipal] = useState("");
-  const [signature, setSignature] = useState<string | null>(null);
+  const [principalSig, setPrincipalSig] = useState<string | null>(null);
   const [date, setDate] = useState("");
+
+  const [teacherPresets, setTeacherPresets] = useState<StaffPreset[]>([]);
+  const [principalPresets, setPrincipalPresets] = useState<StaffPreset[]>([]);
+  const [selectedTeacherId, setSelectedTeacherId] = useState("");
+  const [selectedPrincipalId, setSelectedPrincipalId] = useState("");
 
   const [bulk, setBulk] = useState<BulkStudent[]>([]);
   const [bulkMsg, setBulkMsg] = useState<string | null>(null);
@@ -436,6 +457,17 @@ export default function ProgressReportMaker() {
     return () => ro.disconnect();
   }, []);
 
+  useEffect(() => {
+    try {
+      const t = localStorage.getItem(TEACHER_KEY);
+      if (t) setTeacherPresets(JSON.parse(t));
+      const p = localStorage.getItem(PRINCIPAL_KEY);
+      if (p) setPrincipalPresets(JSON.parse(p));
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
   const data: ReportData = useMemo(
     () => ({
       design,
@@ -448,11 +480,12 @@ export default function ProgressReportMaker() {
       photo,
       subjects,
       teacher,
+      teacherSig,
       principal,
-      signature,
+      principalSig,
       date,
     }),
-    [design, exam, year, maxMark, studentName, klass, roll, photo, subjects, teacher, principal, signature, date],
+    [design, exam, year, maxMark, studentName, klass, roll, photo, subjects, teacher, teacherSig, principal, principalSig, date],
   );
 
   /* subject helpers */
@@ -471,8 +504,81 @@ export default function ProgressReportMaker() {
   };
   const onSignature = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
-    if (f) setSignature(await fileToDataUrl(f));
+    if (f) setTeacherSig(await fileToDataUrl(f));
     e.target.value = "";
+  };
+  const onPrincipalSig = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (f) setPrincipalSig(await fileToDataUrl(f));
+    e.target.value = "";
+  };
+
+  /* Teacher / principal presets (saved with their signature) */
+  const applyStaff = (role: "teacher" | "principal", id: string) => {
+    if (role === "teacher") setSelectedTeacherId(id);
+    else setSelectedPrincipalId(id);
+    if (!id) return;
+    const list = role === "teacher" ? teacherPresets : principalPresets;
+    const p = list.find((x) => x.id === id);
+    if (!p) return;
+    if (role === "teacher") {
+      setTeacher(p.name);
+      setTeacherSig(p.signature);
+    } else {
+      setPrincipal(p.name);
+      setPrincipalSig(p.signature);
+    }
+  };
+
+  const saveStaff = (role: "teacher" | "principal") => {
+    const name = (role === "teacher" ? teacher : principal).trim();
+    if (!name) {
+      alert("Enter a name first.");
+      return;
+    }
+    const sig = role === "teacher" ? teacherSig : principalSig;
+    const preset: StaffPreset = { id: `s${Date.now()}`, name, signature: sig };
+    if (role === "teacher") {
+      const next = [...teacherPresets.filter((x) => x.name.toLowerCase() !== name.toLowerCase()), preset];
+      setTeacherPresets(next);
+      setSelectedTeacherId(preset.id);
+      try {
+        localStorage.setItem(TEACHER_KEY, JSON.stringify(next));
+      } catch {
+        /* ignore */
+      }
+    } else {
+      const next = [...principalPresets.filter((x) => x.name.toLowerCase() !== name.toLowerCase()), preset];
+      setPrincipalPresets(next);
+      setSelectedPrincipalId(preset.id);
+      try {
+        localStorage.setItem(PRINCIPAL_KEY, JSON.stringify(next));
+      } catch {
+        /* ignore */
+      }
+    }
+  };
+
+  const deleteStaff = (role: "teacher" | "principal") => {
+    if (role === "teacher") {
+      const next = teacherPresets.filter((x) => x.id !== selectedTeacherId);
+      setTeacherPresets(next);
+      setSelectedTeacherId("");
+      try {
+        localStorage.setItem(TEACHER_KEY, JSON.stringify(next));
+      } catch {
+        /* ignore */
+      }
+    } else {
+      const next = principalPresets.filter((x) => x.id !== selectedPrincipalId);
+      setPrincipalPresets(next);
+      setSelectedPrincipalId("");
+      try {
+        localStorage.setItem(PRINCIPAL_KEY, JSON.stringify(next));
+      } catch {
+        /* ignore */
+      }
+    }
   };
 
   /* single download */
@@ -676,7 +782,19 @@ export default function ProgressReportMaker() {
             <div className="grid grid-cols-2 gap-3">
               <label className="block">
                 <span className="mb-1 block text-sm font-medium text-ink/70">Class / Division</span>
-                <input type="text" value={klass} onChange={(e) => setKlass(e.target.value)} placeholder="e.g. 5 A" className={inputCls} />
+                <input
+                  type="text"
+                  list="zr-classes"
+                  value={klass}
+                  onChange={(e) => setKlass(e.target.value)}
+                  placeholder="Select or type, e.g. 5 A"
+                  className={inputCls}
+                />
+                <datalist id="zr-classes">
+                  {CLASS_OPTIONS.map((c) => (
+                    <option key={c} value={c} />
+                  ))}
+                </datalist>
               </label>
               <label className="block">
                 <span className="mb-1 block text-sm font-medium text-ink/70">Roll No</span>
@@ -772,32 +890,125 @@ export default function ProgressReportMaker() {
         {/* Signatures */}
         <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm">
           <h2 className="font-display text-xl text-brand">Signatures</h2>
-          <div className="mt-4 space-y-4">
-            <label className="block">
-              <span className="mb-1 block text-sm font-medium text-ink/70">Class teacher name</span>
-              <input type="text" value={teacher} onChange={(e) => setTeacher(e.target.value)} placeholder="e.g. Mrs. Anita Menon" className={inputCls} />
-              <span className="mt-1 block text-xs text-ink/45">Printed as a handwritten-style digital signature.</span>
-            </label>
-            <label className="block">
-              <span className="mb-1 block text-sm font-medium text-ink/70">Principal name</span>
-              <input type="text" value={principal} onChange={(e) => setPrincipal(e.target.value)} placeholder="e.g. Dr. Rajesh Kumar" className={inputCls} />
-            </label>
-            <div className="flex items-center gap-3">
-              <label className="cursor-pointer rounded-full border border-brand/40 px-4 py-2 text-xs font-medium text-brand transition hover:bg-brand/5">
-                {signature ? "Change signature image" : "Upload signature image"}
+          <p className="mt-1 text-xs text-ink/45">
+            Save a teacher or principal with their signature once — next time just select them. The selected signatures apply to every card (incl. bulk).
+          </p>
+
+          {/* Class teacher */}
+          <div className="mt-4 rounded-xl border border-black/10 p-4">
+            <span className="block text-sm font-semibold text-ink">Class teacher</span>
+            {teacherPresets.length > 0 && (
+              <select
+                value={selectedTeacherId}
+                onChange={(e) => applyStaff("teacher", e.target.value)}
+                className={`${inputCls} mt-2`}
+              >
+                <option value="">— Select saved teacher —</option>
+                {teacherPresets.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                    {p.signature ? " ✍" : ""}
+                  </option>
+                ))}
+              </select>
+            )}
+            <input
+              type="text"
+              value={teacher}
+              onChange={(e) => setTeacher(e.target.value)}
+              placeholder="Class teacher name"
+              className={`${inputCls} mt-2`}
+            />
+            <span className="mt-1 block text-xs text-ink/45">
+              Printed as a handwritten-style signature when no image is uploaded.
+            </span>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <label className="cursor-pointer rounded-full border border-brand/40 px-3 py-1.5 text-xs font-medium text-brand transition hover:bg-brand/5">
+                {teacherSig ? "Change signature" : "Upload signature"}
                 <input type="file" accept="image/*" onChange={onSignature} className="hidden" />
               </label>
-              {signature && (
-                <button type="button" onClick={() => setSignature(null)} className="text-xs font-medium text-red-600 hover:underline">
+              {teacherSig && (
+                <button type="button" onClick={() => setTeacherSig(null)} className="text-xs font-medium text-red-600 hover:underline">
                   Remove
                 </button>
               )}
+              <button
+                type="button"
+                onClick={() => saveStaff("teacher")}
+                className="rounded-full bg-brand px-3 py-1.5 text-xs font-medium text-white transition hover:bg-brand-700"
+              >
+                Save teacher
+              </button>
+              {selectedTeacherId && (
+                <button type="button" onClick={() => deleteStaff("teacher")} className="text-xs font-medium text-red-600 hover:underline">
+                  Delete saved
+                </button>
+              )}
             </div>
-            <label className="block">
-              <span className="mb-1 block text-sm font-medium text-ink/70">Date <span className="text-ink/40">(optional)</span></span>
-              <input type="text" value={date} onChange={(e) => setDate(e.target.value)} placeholder="e.g. 2026 ജൂൺ 10" className={inputCls} />
-            </label>
+            {teacherSig && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={teacherSig} alt="Teacher signature" className="mt-2 h-10 object-contain" />
+            )}
           </div>
+
+          {/* Principal */}
+          <div className="mt-4 rounded-xl border border-black/10 p-4">
+            <span className="block text-sm font-semibold text-ink">Principal</span>
+            {principalPresets.length > 0 && (
+              <select
+                value={selectedPrincipalId}
+                onChange={(e) => applyStaff("principal", e.target.value)}
+                className={`${inputCls} mt-2`}
+              >
+                <option value="">— Select saved principal —</option>
+                {principalPresets.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                    {p.signature ? " ✍" : ""}
+                  </option>
+                ))}
+              </select>
+            )}
+            <input
+              type="text"
+              value={principal}
+              onChange={(e) => setPrincipal(e.target.value)}
+              placeholder="Principal name"
+              className={`${inputCls} mt-2`}
+            />
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <label className="cursor-pointer rounded-full border border-brand/40 px-3 py-1.5 text-xs font-medium text-brand transition hover:bg-brand/5">
+                {principalSig ? "Change signature" : "Upload signature"}
+                <input type="file" accept="image/*" onChange={onPrincipalSig} className="hidden" />
+              </label>
+              {principalSig && (
+                <button type="button" onClick={() => setPrincipalSig(null)} className="text-xs font-medium text-red-600 hover:underline">
+                  Remove
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => saveStaff("principal")}
+                className="rounded-full bg-brand px-3 py-1.5 text-xs font-medium text-white transition hover:bg-brand-700"
+              >
+                Save principal
+              </button>
+              {selectedPrincipalId && (
+                <button type="button" onClick={() => deleteStaff("principal")} className="text-xs font-medium text-red-600 hover:underline">
+                  Delete saved
+                </button>
+              )}
+            </div>
+            {principalSig && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={principalSig} alt="Principal signature" className="mt-2 h-10 object-contain" />
+            )}
+          </div>
+
+          <label className="mt-4 block">
+            <span className="mb-1 block text-sm font-medium text-ink/70">Date <span className="text-ink/40">(optional)</span></span>
+            <input type="text" value={date} onChange={(e) => setDate(e.target.value)} placeholder="e.g. 10 June 2026" className={inputCls} />
+          </label>
         </div>
 
         {/* Bulk Excel */}
